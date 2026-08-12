@@ -170,6 +170,7 @@ input:focus-visible {
 
 .knotwork-band-bottom {
   align-items: flex-end;
+  transform: translateY(-0.35rem);
 }
 
 .page-shell {
