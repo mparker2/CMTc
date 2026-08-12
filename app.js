@@ -13,6 +13,7 @@
     "completionTitle", "pointsLabel", "solveOrderHeading", "solveOrderAria", "guessesHeading",
     "guessHistoryAria", "guessAria", "closeResultsAria", "copyResultButton", "teamNameRequired",
     "restoreFailed", "emptyWord", "invalidWord", "duplicateWord", "gridFull", "wordCouldNotBeAdded",
+    "wordCorrected", "invalidWordPenalty",
     "wordAdded", "findMoreWords", "maxSelection", "selectionCleared", "wordsShuffled", "invalidGuess",
     "correctGroup", "oneAway", "wrongGroup", "pointSingular", "pointPlural", "copySuccess",
     "copyFailure", "resetConfirmation", "resultSent", "resultSavedForRetry", "saveUnavailable",
@@ -91,6 +92,43 @@
 
   function wordMap(config) {
     return new Map(wordEntries(config).map((entry) => [entry.normalised, entry]));
+  }
+
+  // Damerau–Levenshtein distance includes transposed letters, which are a
+  // common genuine typing error (for example, BLACKSTNOE -> BLACKSTONE).
+  function damerauLevenshtein(left, right) {
+    const distances = Array.from({ length: left.length + 1 }, () => Array(right.length + 1).fill(0));
+    for (let leftIndex = 0; leftIndex <= left.length; leftIndex += 1) distances[leftIndex][0] = leftIndex;
+    for (let rightIndex = 0; rightIndex <= right.length; rightIndex += 1) distances[0][rightIndex] = rightIndex;
+
+    for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
+      for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
+        const substitution = left[leftIndex - 1] === right[rightIndex - 1] ? 0 : 1;
+        distances[leftIndex][rightIndex] = Math.min(
+          distances[leftIndex - 1][rightIndex] + 1,
+          distances[leftIndex][rightIndex - 1] + 1,
+          distances[leftIndex - 1][rightIndex - 1] + substitution,
+        );
+        if (
+          leftIndex > 1
+          && rightIndex > 1
+          && left[leftIndex - 1] === right[rightIndex - 2]
+          && left[leftIndex - 2] === right[rightIndex - 1]
+        ) {
+          distances[leftIndex][rightIndex] = Math.min(
+            distances[leftIndex][rightIndex],
+            distances[leftIndex - 2][rightIndex - 2] + 1,
+          );
+        }
+      }
+    }
+    return distances[left.length][right.length];
+  }
+
+  function maximumTypoDistance(word) {
+    // Longer words can contain two genuine typing errors without becoming
+    // meaningfully ambiguous. Short words remain deliberately strict.
+    return word.length >= 9 ? 2 : 1;
   }
 
   function validateConfig(config) {
@@ -400,9 +438,22 @@
       if (this.state.complete) return { status: "complete" };
       const normalised = normaliseWord(input);
       if (!normalised) return { status: "empty" };
-      const entry = this.lookup.get(normalised);
-      if (!entry) return { status: "invalid" };
-      if (this.state.enteredWords.some((word) => normaliseWord(word) === normalised)) {
+      let entry = this.lookup.get(normalised);
+      let corrected = false;
+      if (!entry) {
+        const candidates = wordEntries(this.config)
+          .map((candidate) => ({ candidate, distance: damerauLevenshtein(normalised, candidate.normalised) }))
+          .filter(({ candidate, distance }) => distance <= maximumTypoDistance(candidate.normalised))
+          .sort((left, right) => left.distance - right.distance);
+        if (candidates.length > 0 && (candidates.length === 1 || candidates[0].distance < candidates[1].distance)) {
+          entry = candidates[0].candidate;
+          corrected = true;
+        } else {
+          this.state.score = Math.max(0, this.state.score - 1);
+          return { status: "invalid", deducted: 1, score: this.state.score };
+        }
+      }
+      if (this.state.enteredWords.some((word) => normaliseWord(word) === normaliseWord(entry.canonical))) {
         return { status: "duplicate", word: entry.canonical };
       }
 
@@ -413,7 +464,7 @@
       const selectedEmptySlot = emptySlots[randomSlotIndex(emptySlots.length, this.random)];
       this.state.enteredWords.push(entry.canonical);
       this.state.gridSlots[selectedEmptySlot] = entry.canonical;
-      return { status: "added", word: entry.canonical, slot: selectedEmptySlot };
+      return { status: corrected ? "corrected" : "added", word: entry.canonical, input, slot: selectedEmptySlot };
     }
 
     shuffle() {
@@ -590,6 +641,8 @@
       this.nodes["score-label"].textContent = this.getText("scoreLabel");
       this.nodes["score-track"].setAttribute("aria-label", this.getText("scoreAria"));
       this.nodes["score-note"].textContent = this.getText("scorePenalty", {
+        wordPenalty: 1,
+        wordPoints: this.getText("pointSingular"),
         penalty: this.config.score.incorrectPenalty,
         points: this.getText(Number(this.config.score.incorrectPenalty) === 1 ? "pointSingular" : "pointPlural"),
       });
@@ -668,12 +721,14 @@
 
       const messages = {
         empty: [this.getText("emptyWord"), "error"],
-        invalid: [this.getText("invalidWord"), "error"],
+        invalid: [this.getText("invalidWordPenalty", { penalty: result.deducted }), "error"],
         duplicate: [this.getText("duplicateWord", { word: result.word }), "error"],
         full: [this.getText("gridFull"), "error"],
       };
-      if (result.status !== "added") {
+      if (result.status !== "added" && result.status !== "corrected") {
         const [message, tone] = messages[result.status] ?? [this.getText("wordCouldNotBeAdded"), "error"];
+        this.persist();
+        if (result.deducted) this.render();
         this.setWordMessage(message, tone);
         this.nodes["word-input"].select();
         return;
@@ -683,7 +738,9 @@
       this.persist();
       this.render();
       const foundCount = this.engine.state.enteredWords.length;
-      const parts = [this.getText("wordAdded", { word: result.word })];
+      const parts = [result.status === "corrected"
+        ? this.getText("wordCorrected", { input: result.input, word: result.word })
+        : this.getText("wordAdded", { word: result.word })];
       if (foundCount < 4) parts.push(this.getText("findMoreWords", { count: 4 - foundCount }));
       this.setWordMessage(parts.join(" "), "success");
       this.nodes["word-input"].focus();
