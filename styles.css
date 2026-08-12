@@ -221,7 +221,7 @@ input:focus-visible {
   line-height: 0.9;
   white-space: nowrap;
   word-spacing: 0.12em;
-  transform: scale(1.2);
+  transform: translateY(0.5rem) scale(1.5);
   transform-origin: left center;
 }
 
@@ -403,7 +403,7 @@ input:focus {
   font-weight: 400;
   line-height: 0.88;
   overflow-wrap: anywhere;
-  transform: scale(1.2);
+  transform: translateY(1rem) rotate(-4deg) scale(1.4);
   transform-origin: left center;
 }
 
