@@ -394,7 +394,27 @@ input:focus {
   align-items: center;
 }
 
+.game-heading-row {
+  align-items: flex-start;
+  padding-block: 0.35rem 1.15rem;
+}
+
+.game-heading-row.has-long-team-name {
+  /* Reserve room for the scaled, rotated heading once it wraps. */
+  padding-bottom: 2.5rem;
+}
+
+.game-heading-row.has-long-team-name .team-heading {
+  margin-top: 1.5rem;
+}
+
+.game-heading-row > div {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .team-heading {
+  width: calc(100% / 1.4);
   max-width: 20ch;
   margin: 0;
   color: var(--accent-deep);
@@ -403,6 +423,8 @@ input:focus {
   font-weight: 400;
   line-height: 0.88;
   overflow-wrap: anywhere;
+  word-break: normal;
+  hyphens: auto;
   transform: translateY(1rem) rotate(-2deg) scale(1.4);
   transform-origin: left center;
 }
