@@ -403,7 +403,7 @@ input:focus {
   font-weight: 400;
   line-height: 0.88;
   overflow-wrap: anywhere;
-  transform: translateY(1rem) rotate(-4deg) scale(1.4);
+  transform: translateY(1rem) rotate(-2deg) scale(1.4);
   transform-origin: left center;
 }
 
