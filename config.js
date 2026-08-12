@@ -111,9 +111,9 @@ const PUZZLE = {
     rankings: [
       { minScore: 100, label: "Perfect" },
       { minScore: 90, label: "Excellent" },
-      { minScore: 75, label: "Very good" },
-      { minScore: 50, label: "Nicely done" },
-      { minScore: 0, label: "Made it in the end" },
+      { minScore: 75, label: "Not bad" },
+      { minScore: 50, label: "Made it in the end" },
+      { minScore: 0, label: "Better luck... next time??" },
     ],
   },
 

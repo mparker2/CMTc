@@ -824,6 +824,8 @@
       if (!this.engine) return;
       const { state } = this.engine;
       this.nodes["game-heading"].textContent = state.teamName;
+      const headingRow = this.nodes["game-heading"].closest(".game-heading-row");
+      headingRow?.classList.toggle("has-long-team-name", state.teamName.length >= 15);
       this.nodes["word-progress"].textContent = this.getText("wordsFound", {
         found: state.enteredWords.length,
         total: wordEntries(this.config).length,
