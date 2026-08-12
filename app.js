@@ -628,7 +628,9 @@
       this.nodes["page-description"].content = this.getText("metaDescription");
       this.nodes["site-header"].setAttribute("aria-label", this.config.title);
       this.nodes["header-eyebrow"].textContent = this.getText("headerEyebrow");
-      this.nodes["header-title"].textContent = this.config.title;
+      // The decorative Allura font renders its regular space unusually tightly;
+      // use a non-breaking space so the separation remains visibly present.
+      this.nodes["header-title"].textContent = String(this.config.title).replace(/ /gu, "\u00a0");
       this.nodes["welcome-location"].textContent = this.getText("welcomeLocation");
       this.nodes["welcome-title"].textContent = this.getText("welcomeTitle");
       this.nodes["welcome-copy"].textContent = this.getText("welcomeInstructions");

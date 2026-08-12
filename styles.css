@@ -172,8 +172,6 @@ input:focus-visible {
 
 .page-shell {
   width: min(100%, 46rem);
-  min-height: 100vh;
-  min-height: 100dvh;
   margin: 0 auto;
   padding: 1rem max(0.85rem, env(safe-area-inset-right)) 2rem max(0.85rem, env(safe-area-inset-left));
 }
@@ -215,8 +213,12 @@ input:focus-visible {
   margin: 0;
   color: var(--accent-deep);
   font-family: "CMT Allura", cursive;
-  font-size: 1.75rem;
+  font-size: 1.95rem;
   line-height: 0.9;
+  white-space: nowrap;
+  word-spacing: 0.12em;
+  transform: scale(1.2);
+  transform-origin: left center;
 }
 
 .welcome-card,
@@ -393,10 +395,12 @@ input:focus {
   margin: 0;
   color: var(--accent-deep);
   font-family: "CMT Allura", cursive;
-  font-size: clamp(2.35rem, 10vw, 3.6rem);
+  font-size: clamp(2.55rem, 10.5vw, 3.9rem);
   font-weight: 400;
   line-height: 0.88;
   overflow-wrap: anywhere;
+  transform: scale(1.2);
+  transform-origin: left center;
 }
 
 .text-button {
