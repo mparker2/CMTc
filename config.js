@@ -18,6 +18,7 @@ function decodePuzzleCategories(blob, key) {
 const PUZZLE = {
   storageKey: "cmt-connections-game-v2",
   title: "CMT Connections",
+  teamNameBlockedNames: ["Matt", "Matty", "Matthew", "Matt P.", "Matt P", "Matty P.", "Matty P", "Matthew P.", "Matthew P"],
 
   /*
    * All words and phrases shown to players live here. Text in braces is
@@ -65,6 +66,8 @@ const PUZZLE = {
     copyResultButton: "Copy result",
 
     teamNameRequired: "Enter a team name to begin.",
+    teamNameTooShort: "Team names must be at least 3 characters.",
+    teamNameTooVague: "There are a lot of Matts at this wedding, can you be more specific?",
     restoreFailed: "Saved progress could not be restored. Starting a new game will replace it.",
     emptyWord: "Enter a word you found.",
     invalidWord: "Not a word in this puzzle…",

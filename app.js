@@ -12,6 +12,7 @@
     "submitGroupButton", "deselectAllButton", "shuffleButton", "resetButton", "completionKicker",
     "completionTitle", "pointsLabel", "solveOrderHeading", "solveOrderAria", "guessesHeading",
     "guessHistoryAria", "guessAria", "closeResultsAria", "copyResultButton", "teamNameRequired",
+    "teamNameTooShort", "teamNameTooVague",
     "restoreFailed", "emptyWord", "invalidWord", "duplicateWord", "gridFull", "wordCouldNotBeAdded",
     "wordCorrected", "invalidWordPenalty",
     "wordAdded", "findMoreWords", "maxSelection", "selectionCleared", "wordsShuffled", "invalidGuess",
@@ -35,6 +36,12 @@
 
   function normaliseTeamName(value) {
     return String(value ?? "").trim().replace(/\s+/gu, " ");
+  }
+
+  function isTooVagueTeamName(value, config) {
+    const normalised = normaliseTeamName(value).toLocaleLowerCase("en-GB");
+    return (Array.isArray(config?.teamNameBlockedNames) ? config.teamNameBlockedNames : [])
+      .some((name) => normaliseTeamName(name).toLocaleLowerCase("en-GB") === normalised);
   }
 
   function formatText(template, values = {}) {
@@ -704,6 +711,16 @@
       const teamName = normaliseTeamName(this.nodes["team-name"].value);
       if (!teamName) {
         this.setTeamMessage(this.getText("teamNameRequired"), "error");
+        this.nodes["team-name"].focus();
+        return;
+      }
+      if (teamName.length < 3) {
+        this.setTeamMessage(this.getText("teamNameTooShort"), "error");
+        this.nodes["team-name"].focus();
+        return;
+      }
+      if (isTooVagueTeamName(teamName, this.config)) {
+        this.setTeamMessage(this.getText("teamNameTooVague"), "error");
         this.nodes["team-name"].focus();
         return;
       }
