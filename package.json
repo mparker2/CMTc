@@ -1,0 +1,10 @@
+{
+  "name": "museum-connections-wedding",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bash scripts/build.sh",
+    "validate": "node scripts/validate-artifact.mjs"
+  },
+  "displayName": "CMT Connections"
+}

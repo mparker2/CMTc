@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<!-- [html-validate-disable empty-title, empty-heading, text-content, unique-landmark -- configured by config.js before interaction] -->
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#21493d">
+    <meta id="page-description" name="description" content="">
+    <title>CMT Connections</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="knotwork-band knotwork-band-top" aria-hidden="true">
+      <img src="assets/knotwork-border.png" alt="">
+    </div>
+    <div class="page-shell">
+      <header id="site-header" class="site-header">
+        <div class="brand-mark" aria-hidden="true">
+          <img src="assets/cmt-wheel-logo.png" alt="">
+        </div>
+        <div>
+          <p id="header-eyebrow" class="eyebrow"></p>
+          <p id="header-title" class="wordmark"></p>
+        </div>
+      </header>
+
+      <main>
+        <section id="welcome-screen" class="welcome-card" aria-labelledby="welcome-title">
+          <p id="welcome-location" class="section-kicker"></p>
+          <h1 id="welcome-title"></h1>
+          <p id="welcome-copy" class="welcome-copy"></p>
+
+          <form id="team-form" class="team-form" novalidate>
+            <label id="team-name-label" for="team-name"></label>
+            <div class="input-action">
+              <input
+                id="team-name"
+                name="teamName"
+                type="text"
+                maxlength="60"
+                autocomplete="off"
+                enterkeyhint="go"
+                required
+                aria-describedby="team-error"
+              >
+              <button id="begin-game" class="button button-primary" type="submit"></button>
+            </div>
+            <p id="team-error" class="form-message" aria-live="polite"></p>
+          </form>
+
+          <p class="welcome-note"><span aria-hidden="true">✦</span> <span id="welcome-note-text"></span></p>
+        </section>
+
+        <section id="game-screen" class="game-screen" hidden aria-labelledby="game-heading">
+          <div class="game-heading-row">
+            <div>
+              <p id="playing-as-label" class="eyebrow"></p>
+              <h1 id="game-heading" class="team-heading"></h1>
+            </div>
+            <button id="view-result" class="text-button" type="button" hidden></button>
+          </div>
+
+          <section id="score-card" class="score-card" aria-labelledby="score-label">
+            <div class="score-line">
+              <span id="score-label"></span>
+              <strong id="score-value"></strong>
+            </div>
+            <progress
+              id="score-track"
+              class="score-track"
+              max="100"
+              value="100"
+            ></progress>
+            <p id="score-note" class="score-note"></p>
+          </section>
+
+          <div class="progress-line">
+            <p id="word-progress"></p>
+            <p id="selection-count"></p>
+          </div>
+
+          <section id="board" class="board">
+            <div id="resolved-groups" class="resolved-groups" role="group"></div>
+            <div id="word-grid" class="word-grid" role="group"></div>
+          </section>
+
+          <form id="word-form" class="word-form" novalidate>
+            <label id="word-input-label" for="word-input"></label>
+            <div class="input-action">
+              <input
+                id="word-input"
+                name="word"
+                type="text"
+                autocomplete="off"
+                autocapitalize="characters"
+                enterkeyhint="done"
+                spellcheck="false"
+              >
+              <button id="add-word" class="button button-dark" type="submit"></button>
+            </div>
+            <p id="word-feedback" class="form-message" aria-live="polite" aria-atomic="true"></p>
+          </form>
+
+          <div id="game-actions" class="game-actions" role="group">
+            <button id="submit-group" class="button button-primary submit-button" type="button" disabled>
+            </button>
+            <div class="secondary-actions">
+              <button id="deselect-all" class="button button-secondary" type="button" disabled></button>
+              <button id="shuffle" class="button button-secondary" type="button" disabled></button>
+            </div>
+          </div>
+
+          <p id="submission-status" class="submission-status" aria-live="polite"></p>
+
+          <footer class="game-footer">
+            <button id="reset-game" class="text-button muted" type="button"></button>
+          </footer>
+        </section>
+      </main>
+    </div>
+
+    <div class="knotwork-band knotwork-band-bottom" aria-hidden="true">
+      <img src="assets/knotwork-border.png" alt="">
+    </div>
+
+    <div id="feedback-banner" class="feedback-banner" role="status" aria-live="assertive" aria-atomic="true" hidden></div>
+
+    <dialog id="completion-dialog" class="completion-dialog" aria-labelledby="completion-title">
+      <div class="completion-panel">
+        <button id="close-completion" class="dialog-close" type="button">×</button>
+        <p id="completion-kicker" class="section-kicker"></p>
+        <h2 id="completion-title"></h2>
+        <div class="final-score-wrap">
+          <span id="final-score" class="final-score"></span>
+          <span id="points-label"></span>
+        </div>
+        <p id="ranking-label" class="ranking-label"></p>
+
+        <div class="result-section">
+          <h3 id="solve-order-heading"></h3>
+          <p id="solve-order" class="solve-order" role="img"></p>
+        </div>
+
+        <div class="result-section">
+          <h3 id="guesses-heading"></h3>
+          <div id="guess-history" class="guess-history" role="group"></div>
+        </div>
+
+        <button id="copy-result" class="button button-primary copy-button" type="button"></button>
+        <p id="copy-status" class="copy-status" aria-live="polite"></p>
+      </div>
+    </dialog>
+
+    <div id="fatal-error" class="fatal-error" role="alert" hidden></div>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
