@@ -8,13 +8,13 @@
     "teamNameLabel", "beginButton", "welcomeInstructionsTitle", "playingAsLabel", "defaultTeamHeading",
     "viewResultButton", "scoreLabel", "scoreAria", "scorePenalty", "scoreValueAria", "wordsFound",
     "selectionCount", "boardAria", "solvedGroupsAria", "unresolvedWordsAria", "solvedGroupAria",
-    "tileSelectedSuffix", "wordEntryLabel", "addButton", "puzzleControlsAria",
+    "tileSelectedSuffix", "wordEntryLabel", "allWordsFoundLabel", "addButton", "puzzleControlsAria",
     "submitGroupButton", "deselectAllButton", "shuffleButton", "resetButton", "completionKicker",
     "completionTitle", "pointsLabel", "solveOrderHeading", "solveOrderAria", "guessesHeading",
     "guessHistoryAria", "guessAria", "closeResultsAria", "copyResultButton", "teamNameRequired",
     "teamNameTooShort", "teamNameTooVague",
-    "restoreFailed", "emptyWord", "invalidWord", "duplicateWord", "gridFull", "wordCouldNotBeAdded",
-    "wordCorrected", "invalidWordPenalty",
+    "restoreFailed", "emptyWord", "invalidWord", "wordAlreadyFound", "duplicateWord", "gridFull", "wordCouldNotBeAdded",
+    "wordCorrected", "invalidWordPenalty", "alreadyGuessed",
     "wordAdded", "findMoreWords", "maxSelection", "selectionCleared", "wordsShuffled", "invalidGuess",
     "correctGroup", "oneAway", "wrongGroup", "pointSingular", "pointPlural", "copySuccess",
     "copyFailure", "resetConfirmation", "resultSent", "resultSavedForRetry", "saveUnavailable",
@@ -238,6 +238,7 @@
       startTimestamp: timestamp,
       endTimestamp: null,
       enteredWords: [],
+      invalidWords: [],
       gridSlots: Array(16).fill(null),
       solvedCategories: [],
       categoryOrder: [],
@@ -338,6 +339,9 @@
     if (enteredWords.some((word) => !word) || new Set(enteredWords.map(normaliseWord)).size !== enteredWords.length) {
       throw new Error("Saved words do not match this puzzle.");
     }
+    const invalidWords = Array.isArray(rawState.invalidWords)
+      ? [...new Set(rawState.invalidWords.map(normaliseWord).filter(Boolean))]
+      : [];
 
     const solvedCategories = Array.isArray(rawState.solvedCategories) ? [...rawState.solvedCategories] : [];
     const categoryOrder = Array.isArray(rawState.categoryOrder) ? [...rawState.categoryOrder] : [];
@@ -418,6 +422,7 @@
       startTimestamp: rawState.startTimestamp,
       endTimestamp,
       enteredWords,
+      invalidWords,
       gridSlots,
       solvedCategories,
       categoryOrder,
@@ -456,12 +461,16 @@
           entry = candidates[0].candidate;
           corrected = true;
         } else {
+          if (this.state.invalidWords.includes(normalised)) {
+            return { status: "alreadyGuessed", score: this.state.score };
+          }
+          this.state.invalidWords.push(normalised);
           this.state.score = Math.max(0, this.state.score - 1);
           return { status: "invalid", deducted: 1, score: this.state.score };
         }
       }
       if (this.state.enteredWords.some((word) => normaliseWord(word) === normaliseWord(entry.canonical))) {
-        return { status: "duplicate", word: entry.canonical };
+        return { status: "alreadyFound", word: entry.canonical };
       }
 
       const emptySlots = this.state.gridSlots
@@ -490,8 +499,24 @@
       }
       const gridWordSet = new Set(this.state.gridSlots.filter(Boolean).map(normaliseWord));
       if (canonicalWords.some((word) => !gridWordSet.has(normaliseWord(word)))) {
+        const submittedSet = new Set(canonicalWords.map(normaliseWord));
+        const alreadyGuessed = this.state.guessHistory.some((guess) => (
+          Array.isArray(guess.words)
+          && guess.words.length === canonicalWords.length
+          && new Set(guess.words.map(normaliseWord)).size === submittedSet.size
+          && guess.words.every((word) => submittedSet.has(normaliseWord(word)))
+        ));
+        if (alreadyGuessed) return { alreadyGuessed: true, deducted: 0, score: this.state.score };
         throw new Error("A selected word is no longer unresolved.");
       }
+
+      const submittedSet = new Set(canonicalWords.map(normaliseWord));
+      if (this.state.guessHistory.some((guess) => (
+        Array.isArray(guess.words)
+        && guess.words.length === canonicalWords.length
+        && new Set(guess.words.map(normaliseWord)).size === submittedSet.size
+        && guess.words.every((word) => submittedSet.has(normaliseWord(word)))
+      ))) return { alreadyGuessed: true, deducted: 0, score: this.state.score };
 
       const evaluation = evaluateGuess(canonicalWords, this.config, this.state.solvedCategories);
       const historyEntry = {
@@ -748,7 +773,8 @@
       const messages = {
         empty: [this.getText("emptyWord"), "error"],
         invalid: [this.getText("invalidWordPenalty", { penalty: result.deducted }), "error"],
-        duplicate: [this.getText("duplicateWord", { word: result.word }), "error"],
+        alreadyFound: [this.getText("wordAlreadyFound", { word: result.word }), "error"],
+        alreadyGuessed: [this.getText("alreadyGuessed"), "error"],
         full: [this.getText("gridFull"), "error"],
       };
       if (result.status !== "added" && result.status !== "corrected") {
@@ -820,6 +846,17 @@
       this.selectedWords = [];
       this.persist();
       this.render();
+
+      if (result.alreadyGuessed) {
+        this.setWordMessage(this.getText("alreadyGuessed"), "error");
+        root.clearTimeout(this.guessUnlockTimer);
+        this.guessUnlockTimer = root.setTimeout(() => {
+          this.isSubmittingGuess = false;
+          this.renderGrid();
+          this.updateSelectionUi();
+        }, 420);
+        return;
+      }
 
       if (result.correct) {
         const category = this.config.categories[result.categoryIndex];
@@ -926,8 +963,10 @@
 
     renderWordForm() {
       const complete = this.engine.state.complete;
-      this.nodes["word-input"].disabled = complete;
-      this.nodes["add-word"].disabled = complete;
+      const allWordsFound = this.engine.state.enteredWords.length >= wordEntries(this.config).length;
+      this.nodes["word-input-label"].textContent = this.getText(allWordsFound ? "allWordsFoundLabel" : "wordEntryLabel");
+      this.nodes["word-input"].disabled = complete || allWordsFound;
+      this.nodes["add-word"].disabled = complete || allWordsFound;
       this.nodes["word-form"].hidden = complete;
     }
 

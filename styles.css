@@ -337,6 +337,13 @@ input:focus {
   box-shadow: 0 0 0 3px rgba(47, 102, 84, 0.14);
 }
 
+input:disabled {
+  border-color: #b7c2b8;
+  background: rgba(222, 227, 218, 0.72);
+  color: var(--ink-soft);
+  cursor: not-allowed;
+}
+
 .button {
   min-height: 3.05rem;
   border: 1px solid transparent;

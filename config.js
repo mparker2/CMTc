@@ -55,6 +55,7 @@ const PUZZLE = {
     solvedGroupAria: "Solved group: {category}",
     tileSelectedSuffix: ", selected",
     wordEntryLabel: "Enter a word you found",
+    allWordsFoundLabel: "All words found - time to connect!",
     addButton: "Add",
     puzzleControlsAria: "Puzzle controls",
     submitGroupButton: "Submit group",
@@ -78,9 +79,11 @@ const PUZZLE = {
     restoreFailed: "Saved progress could not be restored. Starting a new game will replace it.",
     emptyWord: "Enter a word you found.",
     invalidWord: "Not a word in this puzzle…",
+    wordAlreadyFound: "{word} already found",
     wordCorrected: "{input} corrected to {word}.",
     invalidWordPenalty: "Not a word in this puzzle — {penalty} point deducted.",
     duplicateWord: "{word} has already been added.",
+    alreadyGuessed: "Already guessed!",
     gridFull: "All available spaces are already filled.",
     wordCouldNotBeAdded: "That word could not be added.",
     wordAdded: "{word} added.",
@@ -103,7 +106,7 @@ const PUZZLE = {
     fatalConfiguration: "The puzzle configuration needs attention: {errors}",
 
     shareTeam: "Team: {teamName}",
-    shareScore: "Score: {score} – {ranking}",
+    shareScore: "Score: {score}",
   },
 
   categories: decodePuzzleCategories(PUZZLE_CATEGORIES_BLOB, PUZZLE_ENCRYPTION_KEY),
