@@ -9,6 +9,7 @@ const RESULTS_HEADERS = [
   "score",
   "start_timestamp",
   "end_timestamp",
+  "elapsed_time",
   "category_order",
   "guess_history",
   "session_id",
@@ -24,6 +25,7 @@ function doPost(e) {
     requireField(data, "teamName");
     requireField(data, "startTimestamp");
     requireField(data, "endTimestamp");
+    requireField(data, "elapsedTime");
 
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     let sheet = spreadsheet.getSheetByName(RESULTS_SHEET_NAME);
@@ -32,6 +34,10 @@ function doPost(e) {
     if (sheet.getLastRow() === 0) {
       sheet.appendRow(RESULTS_HEADERS);
       sheet.setFrozenRows(1);
+    } else if (String(sheet.getRange(1, 5).getValue()) !== "elapsed_time") {
+      // Migrate the previous seven-column layout before recording new results.
+      sheet.insertColumnAfter(4);
+      sheet.getRange(1, 5).setValue("elapsed_time");
     }
 
     if (sessionAlreadyRecorded(sheet, String(data.sessionId))) {
@@ -43,6 +49,7 @@ function doPost(e) {
       Number(data.score) || 0,
       safeText(data.startTimestamp),
       safeText(data.endTimestamp),
+      safeText(data.elapsedTime),
       safeText(data.categoryOrderEmoji),
       safeText(data.guessHistoryEmoji),
       safeText(data.sessionId),
@@ -56,7 +63,7 @@ function doPost(e) {
 
 function sessionAlreadyRecorded(sheet, sessionId) {
   const firstDataRow = 2;
-  const sessionColumn = 7;
+  const sessionColumn = 8;
   const rowCount = sheet.getLastRow() - 1;
   if (rowCount <= 0) return false;
 

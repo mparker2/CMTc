@@ -296,6 +296,15 @@
     return state.guessHistory.map((guess) => guess.emoji).join(separator);
   }
 
+  function elapsedTime(startTimestamp, endTimestamp) {
+    const elapsedMilliseconds = Math.max(0, Date.parse(endTimestamp) - Date.parse(startTimestamp));
+    const totalSeconds = Math.floor(elapsedMilliseconds / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return [hours, minutes, seconds].map((value) => String(value).padStart(2, "0")).join(":");
+  }
+
   function completionPayload(state, config) {
     return {
       sessionId: state.sessionId,
@@ -303,6 +312,7 @@
       score: state.score,
       startTimestamp: state.startTimestamp,
       endTimestamp: state.endTimestamp,
+      elapsedTime: elapsedTime(state.startTimestamp, state.endTimestamp),
       categoryOrderEmoji: categoryOrderEmoji(state, config),
       guessHistoryEmoji: guessHistoryEmoji(state, "\n"),
     };
@@ -1233,6 +1243,7 @@
     buildShareText,
     categoryOrderEmoji,
     completionPayload,
+    elapsedTime,
     createSession,
     evaluateGuess,
     formatText,
