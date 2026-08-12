@@ -28,7 +28,10 @@
         <section id="welcome-screen" class="welcome-card" aria-labelledby="welcome-title">
           <p id="welcome-location" class="section-kicker"></p>
           <h1 id="welcome-title"></h1>
-          <p id="welcome-copy" class="welcome-copy"></p>
+          <section class="welcome-instructions" aria-labelledby="welcome-instructions-title">
+            <h2 id="welcome-instructions-title"></h2>
+            <ul id="welcome-copy"></ul>
+          </section>
 
           <form id="team-form" class="team-form" novalidate>
             <label id="team-name-label" for="team-name"></label>
@@ -49,7 +52,6 @@
             <p id="team-error" class="form-message" aria-live="polite"></p>
           </form>
 
-          <p class="welcome-note"><span aria-hidden="true">✦</span> <span id="welcome-note-text"></span></p>
         </section>
 
         <section id="game-screen" class="game-screen" hidden aria-labelledby="game-heading">

@@ -5,7 +5,7 @@
   const REQUIRED_COLOURS = ["yellow", "green", "blue", "purple"];
   const REQUIRED_TEXT_KEYS = [
     "metaDescription", "headerEyebrow", "welcomeLocation", "welcomeTitle", "welcomeInstructions",
-    "teamNameLabel", "beginButton", "welcomeNote", "playingAsLabel", "defaultTeamHeading",
+    "teamNameLabel", "beginButton", "welcomeInstructionsTitle", "playingAsLabel", "defaultTeamHeading",
     "viewResultButton", "scoreLabel", "scoreAria", "scorePenalty", "scoreValueAria", "wordsFound",
     "selectionCount", "boardAria", "solvedGroupsAria", "unresolvedWordsAria", "solvedGroupAria",
     "tileSelectedSuffix", "wordEntryLabel", "addButton", "puzzleControlsAria",
@@ -617,8 +617,8 @@
     captureNodes() {
       const ids = [
         "page-description", "site-header", "header-eyebrow", "header-title", "welcome-screen", "welcome-location",
-        "welcome-title", "welcome-copy", "team-form", "team-name-label", "team-name", "begin-game", "team-error",
-        "welcome-note-text", "game-screen", "playing-as-label", "game-heading", "view-result", "score-card",
+        "welcome-title", "welcome-copy", "welcome-instructions-title", "team-form", "team-name-label", "team-name", "begin-game", "team-error",
+        "game-screen", "playing-as-label", "game-heading", "view-result", "score-card",
         "score-label", "score-value", "score-track", "score-note", "word-progress", "selection-count", "board",
         "resolved-groups", "word-grid", "word-form", "word-input-label",
         "word-input", "add-word", "word-feedback", "game-actions", "submit-group", "deselect-all", "shuffle",
@@ -640,10 +640,17 @@
       this.nodes["header-title"].textContent = String(this.config.title).replace(/ /gu, "\u00a0");
       this.nodes["welcome-location"].textContent = this.getText("welcomeLocation");
       this.nodes["welcome-title"].textContent = this.getText("welcomeTitle");
-      this.nodes["welcome-copy"].textContent = this.getText("welcomeInstructions");
+      this.nodes["welcome-instructions-title"].textContent = this.getText("welcomeInstructionsTitle");
+      this.nodes["welcome-copy"].replaceChildren(
+        ...(Array.isArray(this.config.text.welcomeInstructions) ? this.config.text.welcomeInstructions : [this.config.text.welcomeInstructions])
+          .map((instruction) => {
+            const item = document.createElement("li");
+            item.textContent = instruction;
+            return item;
+          }),
+      );
       this.nodes["team-name-label"].textContent = this.getText("teamNameLabel");
       this.nodes["begin-game"].textContent = this.getText("beginButton");
-      this.nodes["welcome-note-text"].textContent = this.getText("welcomeNote");
       this.nodes["playing-as-label"].textContent = this.getText("playingAsLabel");
       this.nodes["game-heading"].textContent = this.getText("defaultTeamHeading");
       this.nodes["view-result"].textContent = this.getText("viewResultButton");

@@ -252,10 +252,47 @@ input:focus-visible {
   white-space: pre-line;
 }
 
-.welcome-copy {
+.welcome-instructions {
   max-width: 34rem;
   margin: 0 0 1.6rem;
   color: var(--ink-soft);
+}
+
+.welcome-instructions h2 {
+  margin: 0 0 0.55rem;
+  color: var(--accent-dark);
+  font-size: 0.78rem;
+  font-weight: 760;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.welcome-instructions ul {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  font-size: 0.94rem;
+  line-height: 1.5;
+}
+
+.welcome-instructions li {
+  position: relative;
+  padding-left: 1.15rem;
+}
+
+.welcome-instructions li::before {
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  content: "✦";
+}
+
+.welcome-instructions li + li {
+  margin-top: 0.34rem;
+}
+
+.welcome-copy {
+  margin: 0;
   font-size: 0.98rem;
   line-height: 1.65;
 }
