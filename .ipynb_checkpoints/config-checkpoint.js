@@ -2,6 +2,19 @@
 
 const RESULTS_ENDPOINT = "https://script.google.com/macros/s/AKfycbw1e3tvBYCU8og3uQ8M9rRO6N-kP-BSyqI9aVNQU2d2YQXuAEYw8vd4CtxS2bFLySoh/exec";
 
+// This is lightweight obfuscation for the static site, not encryption. The key
+// necessarily ships to the browser so the game can decode the puzzle locally.
+const PUZZLE_ENCRYPTION_KEY = "CMT-2026";
+const PUZZLE_CATEGORIES_BLOB = "GDZ2WVtEXlNhd3ZsQFVTRWMiMg1xfWYUb283Ql5fR0Rhd3ZUV1xeWTRveA9FX0BSMG9udhBxYX5hYXZvfnFxfRAZG2N3Eh4UExQRDx4SZHcPGxEPb00eTWE5PVleVRAMYRo1WVdCRVc6PnRaWlVAU2M6MQ1aUURTYyE9W1dUEBphLjtBXUVAFHlvM19XVVwUb28jQkBUQRR5FnZv8bRxfg8IdgEQYnpzCgN2ARB8d38XBXYBEGN6cwILdnBPHEkUNyQgQVcSCBQBKDoCcFhXXy0jdGBHXkBZMG0jSBJYU0AmbTZMVVdXUmFhdk5dXF1DMW9uD1BcR1NhYXZaXUJWRWF3Dw9/f2BzYWF2b35xEBphARtgfX52FG9vE2V+cWEUHjB4VhBEW0IvKHYXEHVcUS8kJ0UdY1FZNzk9XlofdVMxIDVDElJXUzE+dgEQU11aLDgmDwgSQkMxPThIEBwQQSw/MF4QCmkUEwIGeXdiEBphDBh5EBwQfYDbGH5xeBAaYQURbGRpEGs+EA==";
+
+function decodePuzzleCategories(blob, key) {
+  const binary = globalThis.atob(blob);
+  const encrypted = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+  const keyBytes = new TextEncoder().encode(key);
+  const decoded = encrypted.map((byte, index) => byte ^ keyBytes[index % keyBytes.length]);
+  return JSON.parse(new TextDecoder().decode(decoded));
+}
+
 const PUZZLE = {
   storageKey: "cmt-connections-game-v2",
   title: "CMT Connections",
@@ -81,28 +94,7 @@ const PUZZLE = {
     shareScore: "Score: {score} – {ranking}",
   },
 
-  categories: [
-    {
-      title: "Areas of CMT",
-      colour: "yellow",
-      words: ["ASH", "BLACKSTONE", "PYE", "VALVE"],
-    },
-    {
-      title: "Waterways where we have lived",
-      colour: "green",
-      words: ["BÄCHLE", "RHEIN", "LEITH", "SHEAF"],
-    },
-    {
-      title: "Ben/Bheinn Munros we have bagged",
-      colour: "blue",
-      words: ["MORE", "BLA", "LOMOND", "GHLAS"],
-    },
-    {
-      title: "English/Scottish/German beers",
-      colour: "purple",
-      words: ["PORTER", "ALT", "KÖLSCH", "HEAVY"],
-    },
-  ],
+  categories: decodePuzzleCategories(PUZZLE_CATEGORIES_BLOB, PUZZLE_ENCRYPTION_KEY),
 
   palette: {
     yellow: { background: "#F1E1A6", foreground: "#3D351A", emoji: "🟨", label: "yellow" },

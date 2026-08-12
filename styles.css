@@ -587,6 +587,15 @@ input:focus {
   cursor: default;
 }
 
+/* Long single words get a small reduction; phrases remain free to wrap. */
+.word-tile.word-tile--long {
+  font-size: clamp(0.52rem, 2.5vw, 0.76rem);
+}
+
+.word-tile.word-tile--very-long {
+  font-size: clamp(0.49rem, 2.25vw, 0.7rem);
+}
+
 .blank-tile {
   display: grid;
   place-items: center;

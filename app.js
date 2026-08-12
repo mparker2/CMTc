@@ -824,6 +824,10 @@
         const tile = document.createElement("button");
         tile.type = "button";
         tile.className = "word-tile";
+        // Keep long single words on one line where possible. Phrases are left
+        // at the normal size so they can wrap naturally across lines.
+        if (!/\s/gu.test(word) && word.length >= 8) tile.classList.add("word-tile--long");
+        if (!/\s/gu.test(word) && word.length >= 11) tile.classList.add("word-tile--very-long");
         tile.dataset.word = word;
         tile.textContent = word;
         tile.disabled = !canSelect;
