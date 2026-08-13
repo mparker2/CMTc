@@ -15,9 +15,9 @@
     </div>
     <div class="page-shell">
       <header id="site-header" class="site-header">
-        <div class="brand-mark" aria-hidden="true">
+        <button id="wheel-trigger" class="brand-mark is-entering" type="button" aria-label="Secret bonus round">
           <img src="assets/cmt-wheel-logo.png" alt="">
-        </div>
+        </button>
         <div>
           <p id="header-eyebrow" class="eyebrow"></p>
           <img id="header-title" class="wordmark" src="assets/wordmark.png" alt="">
@@ -147,6 +147,18 @@
         <p id="submission-status" class="submission-status" aria-live="polite"></p>
       </div>
     </dialog>
+
+    <div id="bonus-dialog" class="bonus-dialog" role="dialog" aria-modal="true" aria-labelledby="bonus-title" hidden>
+      <div class="completion-panel bonus-panel">
+        <button id="close-bonus" class="dialog-close" type="button" aria-label="Close bonus round">×</button>
+        <h2 id="bonus-title"></h2>
+        <p id="bonus-instructions" class="bonus-instructions"></p>
+        <div id="bonus-grid" class="bonus-grid" role="group"></div>
+        <div id="bonus-lives" class="bonus-lives" role="img"></div>
+        <button id="bonus-submit" class="button button-primary copy-button" type="button"></button>
+        <p id="bonus-feedback" class="copy-status" aria-live="polite"></p>
+      </div>
+    </div>
 
     <div id="fatal-error" class="fatal-error" role="alert" hidden></div>
 

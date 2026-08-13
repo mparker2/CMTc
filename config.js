@@ -19,6 +19,11 @@ const PUZZLE = {
   storageKey: "cmt-connections-game-v2",
   title: "CMT Connections",
   teamNameBlockedNames: ["Matt", "Matty", "Matthew", "Matt P.", "Matt P", "MattP", "MattP.", "Matty P.", "Matty P", "MattyP", "MattyP.", "Matthew P.", "Matthew P", "MatthewP.", "MatthewP"],
+  bonusRound: {
+    surnames: ["Proctor", "Fleming", "Holland", "Hodgeson", "Dent", "Shaw", "Gooddy", "Davis", "Willis"],
+    correctSurnames: ["Proctor", "Fleming", "Holland", "Hodgeson"],
+    points: 50,
+  },
 
   /*
    * All words and phrases shown to players live here. Text in braces is
@@ -72,6 +77,12 @@ const PUZZLE = {
     guessAria: "Guess {number}: {colours}",
     closeResultsAria: "Close results",
     copyResultButton: "Copy result",
+    bonusRoundTitle: "Bonus round unlocked!",
+    bonusRoundInstructions: "There are a lot of Matts at this wedding...\nCan you find them?",
+    bonusRoundSubmit: "Submit answers",
+    bonusRoundLivesAria: "Lives remaining: {count}",
+    bonusRoundSuccess: "Correct! {points} points added.",
+    bonusRoundFailure: "No extra points for you...",
 
     teamNameRequired: "Enter a team name to begin.",
     teamNameTooShort: "Team names must be at least 3 characters.",

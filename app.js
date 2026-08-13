@@ -19,6 +19,8 @@
     "correctGroup", "oneAway", "wrongGroup", "pointSingular", "pointPlural", "copySuccess",
     "copyFailure", "resetConfirmation", "resultSent", "resultSavedForRetry", "saveUnavailable",
     "fatalConfiguration", "shareTeam", "shareScore",
+    "bonusRoundTitle", "bonusRoundInstructions", "bonusRoundSubmit",
+    "bonusRoundLivesAria", "bonusRoundSuccess", "bonusRoundFailure",
   ];
 
   function normaliseWord(value) {
@@ -207,6 +209,17 @@
     if (!String(config.storageKey ?? "").trim()) {
       errors.push("PUZZLE.storageKey must not be empty.");
     }
+    const bonusNames = config.bonusRound?.surnames;
+    const bonusAnswers = config.bonusRound?.correctSurnames;
+    if (!Array.isArray(bonusNames) || bonusNames.length !== 9 || new Set(bonusNames.map(normaliseWord)).size !== 9) {
+      errors.push("PUZZLE.bonusRound.surnames must contain nine unique names.");
+    }
+    if (!Array.isArray(bonusAnswers) || bonusAnswers.length !== 4 || bonusAnswers.some((name) => !bonusNames?.includes(name))) {
+      errors.push("PUZZLE.bonusRound.correctSurnames must contain four configured names.");
+    }
+    if (!Number.isFinite(Number(config.bonusRound?.points)) || Number(config.bonusRound.points) <= 0) {
+      errors.push("PUZZLE.bonusRound.points must be positive.");
+    }
     return errors;
   }
 
@@ -246,6 +259,9 @@
       guessHistory: [],
       complete: false,
       cheatUsed: false,
+      bonusRoundUnlocked: false,
+      bonusRoundCompleted: false,
+      bonusRoundLives: 3,
       resultSubmitted: false,
       submissionAttemptedAt: null,
     };
@@ -424,7 +440,7 @@
 
     const rawScore = Number(rawState.score);
     const score = Number.isFinite(rawScore)
-      ? Math.max(0, Math.min(Number(config.score.start), rawScore))
+      ? Math.max(0, Math.min(Number(config.score.start) + Number(config.bonusRound?.points || 0), rawScore))
       : Number(config.score.start);
 
     return {
@@ -442,6 +458,9 @@
       guessHistory,
       complete,
       cheatUsed: Boolean(rawState.cheatUsed),
+      bonusRoundUnlocked: Boolean(rawState.bonusRoundUnlocked),
+      bonusRoundCompleted: Boolean(rawState.bonusRoundCompleted),
+      bonusRoundLives: Math.max(0, Math.min(3, Number.isFinite(Number(rawState.bonusRoundLives)) ? Number(rawState.bonusRoundLives) : 3)),
       resultSubmitted: complete && Boolean(rawState.resultSubmitted),
       submissionAttemptedAt: isIsoTimestamp(rawState.submissionAttemptedAt) ? rawState.submissionAttemptedAt : null,
     };
@@ -639,6 +658,8 @@
       this.selectedWords = [];
       this.isSubmittingGuess = false;
       this.resultSubmissionInFlight = false;
+      this.deferBonusGold = false;
+      this.bonusGoldTimer = null;
       this.bannerTimer = null;
       this.guessUnlockTimer = null;
       this.nodes = {};
@@ -691,6 +712,8 @@
         "completion-kicker", "completion-title", "final-score", "points-label", "ranking-label",
         "solve-order-heading", "solve-order", "guesses-heading", "guess-history", "copy-result", "copy-status",
         "fatal-error",
+        "wheel-trigger", "bonus-dialog", "close-bonus", "bonus-title", "bonus-instructions",
+        "bonus-lives", "bonus-grid", "bonus-submit", "bonus-feedback",
       ];
       for (const id of ids) this.nodes[id] = document.getElementById(id);
     }
@@ -750,6 +773,9 @@
       this.nodes["guesses-heading"].textContent = this.getText("guessesHeading");
       this.nodes["guess-history"].setAttribute("aria-label", this.getText("guessHistoryAria"));
       this.nodes["copy-result"].textContent = this.getText("copyResultButton");
+      this.nodes["bonus-title"].textContent = this.getText("bonusRoundTitle");
+      this.nodes["bonus-instructions"].textContent = this.getText("bonusRoundInstructions");
+      this.nodes["bonus-submit"].textContent = this.getText("bonusRoundSubmit");
     }
 
     fitWelcomeTitle() {
@@ -842,6 +868,10 @@
       this.nodes["view-result"].addEventListener("click", () => this.openCompletion());
       this.nodes["close-completion"].addEventListener("click", () => this.closeCompletion());
       this.nodes["copy-result"].addEventListener("click", () => this.copyResult());
+      this.nodes["bonus-grid"].addEventListener("click", (event) => this.toggleBonusSurname(event));
+      this.nodes["bonus-submit"].addEventListener("click", () => this.submitBonusRound());
+      this.nodes["close-bonus"].addEventListener("click", () => this.closeBonusRound());
+      this.bindWheelHold();
       root.addEventListener("online", () => this.submitCompletedResult(true));
       root.addEventListener("storage", (event) => this.syncSubmissionState(event));
       root.visualViewport?.addEventListener?.("resize", this.syncBannerViewport);
@@ -866,6 +896,201 @@
         fitScriptText();
       }
       this.syncBannerViewport();
+    }
+
+    bindWheelHold() {
+      const wheel = this.nodes["wheel-trigger"];
+      if (!wheel) return;
+      const wheelImage = wheel.querySelector("img");
+      if (!wheelImage) return;
+      let holdStartedAt = 0;
+      let holdTimer = null;
+      let spinFrame = null;
+      let cooldownFrame = null;
+      let rotation = 0;
+      let lastFrameAt = 0;
+      let spinSpeed = 0;
+      const stop = () => {
+        if (!holdStartedAt) return;
+        root.clearInterval(holdTimer);
+        holdTimer = null;
+        holdStartedAt = 0;
+        root.cancelAnimationFrame?.(spinFrame);
+        spinFrame = null;
+        wheel.classList.remove("is-pressing");
+        wheel.style.removeProperty("--wheel-spin-duration");
+
+        const startRotation = rotation;
+        const nextWholeRotation = Math.ceil((startRotation + 0.0001) / 360) * 360;
+        let targetRotation = nextWholeRotation > startRotation ? nextWholeRotation : startRotation + 360;
+        const initialSpeed = spinSpeed;
+        const decelerationDuration = 0.5;
+        const minimumDistance = initialSpeed * decelerationDuration / 2;
+        while (targetRotation - startRotation < minimumDistance) {
+          targetRotation += 360;
+        }
+        const totalDistance = targetRotation - startRotation;
+        const decelerationDistance = initialSpeed * decelerationDuration / 2;
+        const coastDistance = Math.max(0, totalDistance - decelerationDistance);
+        const coastDuration = initialSpeed > 0 ? coastDistance / initialSpeed : 0;
+        const cooldownDuration = coastDuration + decelerationDuration;
+        const cooldownStartedAt = performance.now();
+        const cooldown = (now) => {
+          const elapsedSeconds = Math.min(cooldownDuration, (now - cooldownStartedAt) / 1000);
+          if (elapsedSeconds <= coastDuration) {
+            rotation = startRotation + (initialSpeed * elapsedSeconds);
+          } else {
+            const progress = (elapsedSeconds - coastDuration) / decelerationDuration;
+            // Coast first, then decelerate linearly to zero exactly at the
+            // target orientation. The velocity never increases or reverses.
+            rotation = startRotation + coastDistance + decelerationDistance * (2 * progress - (progress ** 2));
+          }
+          wheelImage.style.transform = `rotate(${rotation}deg)`;
+          if (elapsedSeconds < cooldownDuration) cooldownFrame = root.requestAnimationFrame(cooldown);
+          else {
+            cooldownFrame = null;
+            rotation = 0;
+            spinSpeed = 0;
+            wheelImage.style.removeProperty("transform");
+            wheel.classList.remove("is-cooling");
+          }
+        };
+        root.cancelAnimationFrame?.(cooldownFrame);
+        wheel.classList.add("is-cooling");
+        cooldownFrame = root.requestAnimationFrame(cooldown);
+      };
+      const update = () => {
+        const elapsed = Date.now() - holdStartedAt;
+        const progress = Math.min(elapsed, 4000) / 4000;
+        const easedProgress = progress * progress;
+        const speed = 1.8 - (1.64 * easedProgress);
+        spinSpeed = 200 + (2050 * easedProgress);
+        wheel.style.setProperty("--wheel-spin-duration", `${speed}s`);
+        if (elapsed >= 4000 && this.engine && !this.engine.state.bonusRoundCompleted) {
+          this.engine.state.bonusRoundUnlocked = true;
+          this.persist();
+          stop();
+          // Let pointer capture and the wheel animation settle before the
+          // modal enters the top layer; opening it during the hold can make
+          // mobile browsers recalculate the visual viewport unexpectedly.
+          root.setTimeout(() => this.openBonusRound(), 0);
+        }
+      };
+      const animateSpin = (now) => {
+        if (!holdStartedAt) return;
+        const elapsed = Date.now() - holdStartedAt;
+        const progress = Math.min(elapsed, 4000) / 4000;
+        const easedProgress = progress * progress;
+        const degreesPerSecond = 200 + (2050 * easedProgress);
+        const frameDelta = Math.min(50, now - lastFrameAt);
+        spinSpeed = degreesPerSecond;
+        rotation += degreesPerSecond * frameDelta / 1000;
+        wheelImage.style.transform = `rotate(${rotation}deg)`;
+        lastFrameAt = now;
+        spinFrame = root.requestAnimationFrame(animateSpin);
+      };
+      const start = (event) => {
+        if (!this.engine || this.engine.state.complete || this.engine.state.bonusRoundCompleted || holdStartedAt) return;
+        event.preventDefault();
+        wheel.classList.remove("is-entering");
+        root.cancelAnimationFrame?.(cooldownFrame);
+        cooldownFrame = null;
+        wheel.classList.remove("is-cooling");
+        wheelImage.style.removeProperty("transform");
+        rotation = 0;
+        wheel.setPointerCapture?.(event.pointerId);
+        holdStartedAt = Date.now();
+        lastFrameAt = performance.now();
+        wheel.classList.add("is-pressing");
+        update();
+        spinFrame = root.requestAnimationFrame(animateSpin);
+        holdTimer = root.setInterval(update, 80);
+      };
+      wheel.addEventListener("pointerdown", start);
+      wheel.addEventListener("pointerup", stop);
+      wheel.addEventListener("pointercancel", stop);
+      wheel.addEventListener("lostpointercapture", stop);
+      wheel.addEventListener("contextmenu", (event) => event.preventDefault());
+      root.setTimeout(() => wheel.classList.remove("is-entering"), 2000);
+    }
+
+    openBonusRound() {
+      if (!this.engine || this.engine.state.bonusRoundCompleted) return;
+      this.bonusSelectedSurnames = new Set();
+      this.bonusLives = this.engine.state.bonusRoundLives ?? 3;
+      this.bonusSurnames = shuffleArray([...this.config.bonusRound.surnames]);
+      this.renderBonusRound();
+      const dialog = this.nodes["bonus-dialog"];
+      if (!dialog.hidden) return;
+      dialog.hidden = false;
+    }
+
+    closeBonusRound() {
+      const dialog = this.nodes["bonus-dialog"];
+      dialog.hidden = true;
+    }
+
+    renderBonusRound() {
+      const grid = this.nodes["bonus-grid"];
+      grid.replaceChildren();
+      for (const surname of this.bonusSurnames ?? this.config.bonusRound.surnames) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "bonus-surname";
+        button.dataset.surname = surname;
+        button.textContent = surname;
+        button.setAttribute("aria-pressed", String(this.bonusSelectedSurnames.has(surname)));
+        button.classList.toggle("is-selected", this.bonusSelectedSurnames.has(surname));
+        grid.append(button);
+      }
+      const lives = Math.max(0, this.bonusLives ?? 3);
+      this.nodes["bonus-lives"].textContent = "♥".repeat(lives) + "♡".repeat(3 - lives);
+      this.nodes["bonus-lives"].setAttribute("aria-label", this.getText("bonusRoundLivesAria", { count: lives }));
+      this.nodes["bonus-submit"].disabled = this.bonusSelectedSurnames.size !== 4;
+    }
+
+    toggleBonusSurname(event) {
+      const button = event.target.closest(".bonus-surname");
+      if (!button || this.nodes["bonus-dialog"].hidden) return;
+      const surname = button.dataset.surname;
+      if (this.bonusSelectedSurnames.has(surname)) this.bonusSelectedSurnames.delete(surname);
+      else if (this.bonusSelectedSurnames.size < 4) this.bonusSelectedSurnames.add(surname);
+      this.renderBonusRound();
+    }
+
+    submitBonusRound() {
+      if (!this.engine || this.engine.state.bonusRoundCompleted || this.bonusSelectedSurnames.size !== 4) return;
+      const answers = new Set(this.config.bonusRound.correctSurnames);
+      const correct = this.bonusSelectedSurnames.size === answers.size
+        && [...this.bonusSelectedSurnames].every((surname) => answers.has(surname));
+      if (correct) {
+        this.engine.state.score += Number(this.config.bonusRound.points);
+        this.engine.state.bonusRoundCompleted = true;
+        this.deferBonusGold = true;
+        this.persist();
+        this.render();
+        this.closeBonusRound();
+        this.animateBonusScore();
+        root.clearTimeout(this.bonusGoldTimer);
+        this.bonusGoldTimer = root.setTimeout(() => {
+          this.deferBonusGold = false;
+          this.renderScore();
+        }, 150);
+        this.showBanner(this.getText("bonusRoundSuccess", { points: this.config.bonusRound.points }), "success");
+        return;
+      }
+
+      this.bonusLives -= 1;
+      this.bonusSelectedSurnames = new Set();
+      this.engine.state.bonusRoundLives = this.bonusLives;
+      if (this.bonusLives <= 0) {
+        this.engine.state.bonusRoundCompleted = true;
+        this.persist();
+        this.closeBonusRound();
+        this.showBanner(this.getText("bonusRoundFailure"), "error");
+      } else {
+        this.renderBonusRound();
+      }
     }
 
     startGame(event) {
@@ -1045,6 +1270,7 @@
       const maximum = Number(this.config.score.start);
       this.nodes["score-value"].textContent = String(score);
       this.nodes["score-track"].value = Math.max(0, Math.min(maximum, score));
+      this.nodes["score-card"].classList.toggle("score-over-limit", score > maximum && !this.deferBonusGold);
       this.nodes["score-track"].setAttribute("aria-valuetext", this.getText("scoreValueAria", { score }));
       this.fitScoreNote();
     }
@@ -1173,6 +1399,14 @@
       root.setTimeout(() => card.classList.remove("score-hit"), 520);
     }
 
+    animateBonusScore() {
+      const card = this.nodes["score-card"];
+      card.classList.remove("score-bonus");
+      void card.offsetWidth;
+      card.classList.add("score-bonus");
+      root.setTimeout(() => card.classList.remove("score-bonus"), 760);
+    }
+
     showBanner(message, tone = "notice") {
       const banner = this.nodes["feedback-banner"];
       root.clearTimeout(this.bannerTimer);
@@ -1252,7 +1486,11 @@
       this.selectedWords = [];
       this.isSubmittingGuess = false;
       this.resultSubmissionInFlight = false;
+      this.deferBonusGold = false;
+      root.clearTimeout(this.bonusGoldTimer);
+      this.bonusGoldTimer = null;
       this.closeCompletionIfOpen();
+      this.closeBonusRound();
       this.nodes["team-name"].value = "";
       this.nodes["word-feedback"].textContent = "";
       this.nodes["submission-status"].textContent = "";
