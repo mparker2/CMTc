@@ -478,10 +478,6 @@ input:disabled {
   padding-bottom: 2.5rem;
 }
 
-.game-heading-row.has-long-team-name .team-heading {
-  margin-top: 1.5rem;
-}
-
 .game-heading-row > div {
   min-width: 0;
   flex: 1 1 auto;
@@ -490,7 +486,7 @@ input:disabled {
 .team-heading {
   width: calc(100% / 1.4);
   max-width: 20ch;
-  margin: 0;
+  margin: 0.5rem 0 0;
   color: var(--accent-deep);
   font-family: "CMT Wedding Script", cursive;
   font-style: italic;
@@ -500,7 +496,7 @@ input:disabled {
   overflow-wrap: anywhere;
   word-break: normal;
   hyphens: auto;
-  transform: translateY(1rem) rotate(-2deg) scale(1.4);
+  transform: translateY(0.5rem) rotate(-2deg) scale(1.4);
   transform-origin: left center;
 }
 

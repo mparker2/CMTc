@@ -674,7 +674,6 @@
       this.nodes["header-eyebrow"].textContent = this.getText("headerEyebrow");
       this.nodes["header-title"].alt = this.config.title;
       this.nodes["welcome-title"].textContent = this.getText("welcomeTitle");
-      this.fitWelcomeTitle();
       this.nodes["welcome-instructions-title"].textContent = this.getText("welcomeInstructionsTitle");
       this.nodes["welcome-copy"].replaceChildren(
         ...(Array.isArray(this.config.text.welcomeInstructions) ? this.config.text.welcomeInstructions : [this.config.text.welcomeInstructions])
@@ -797,10 +796,19 @@
       root.addEventListener("orientationchange", this.syncBannerViewport);
       root.addEventListener("resize", this.fitWelcomeTitle);
       root.addEventListener("resize", this.fitTeamName);
-      root.fonts?.ready?.then(() => {
+      const fitScriptText = () => {
         this.fitWelcomeTitle();
         this.fitTeamName();
-      });
+        root.requestAnimationFrame?.(() => {
+          this.fitWelcomeTitle();
+          this.fitTeamName();
+        });
+      };
+      if (root.document?.fonts?.load) {
+        root.document.fonts.load('italic 5rem "CMT Wedding Script"').then(fitScriptText);
+      } else {
+        fitScriptText();
+      }
       this.syncBannerViewport();
     }
 
