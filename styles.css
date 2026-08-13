@@ -596,6 +596,7 @@ input:disabled {
   margin: 0.42rem 0 0;
   color: var(--ink-soft);
   font-size: 0.72rem;
+  white-space: nowrap;
 }
 
 .score-card.score-hit {

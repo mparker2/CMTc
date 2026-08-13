@@ -618,6 +618,7 @@
       this.syncBannerViewport = this.syncBannerViewport.bind(this);
       this.fitWelcomeTitle = this.fitWelcomeTitle.bind(this);
       this.fitTeamName = this.fitTeamName.bind(this);
+      this.fitScoreNote = this.fitScoreNote.bind(this);
     }
 
     init() {
@@ -696,6 +697,7 @@
         penalty: this.config.score.incorrectPenalty,
         points: this.getText(Number(this.config.score.incorrectPenalty) === 1 ? "pointSingular" : "pointPlural"),
       });
+      this.fitScoreNote();
       this.nodes["score-track"].max = Number(this.config.score.start);
       this.nodes["score-value"].textContent = String(this.config.score.start);
       this.nodes["score-track"].value = Number(this.config.score.start);
@@ -778,6 +780,30 @@
       heading.style.fontSize = `${low}px`;
     }
 
+    fitScoreNote() {
+      const note = this.nodes["score-note"];
+      if (!note || !note.isConnected) return;
+      const originalFontSize = note.style.fontSize;
+      note.style.fontSize = "";
+      note.style.whiteSpace = "nowrap";
+      const maximum = Number.parseFloat(getComputedStyle(note).fontSize);
+      const availableWidth = note.clientWidth;
+      if (!availableWidth || !maximum) {
+        note.style.fontSize = originalFontSize;
+        return;
+      }
+
+      let low = 8;
+      let high = maximum;
+      for (let iteration = 0; iteration < 12; iteration += 1) {
+        const candidate = (low + high) / 2;
+        note.style.fontSize = `${candidate}px`;
+        if (note.scrollWidth <= availableWidth + 1) low = candidate;
+        else high = candidate;
+      }
+      note.style.fontSize = `${low}px`;
+    }
+
     bindEvents() {
       this.nodes["team-form"].addEventListener("submit", (event) => this.startGame(event));
       this.nodes["word-form"].addEventListener("submit", (event) => this.addWord(event));
@@ -796,12 +822,15 @@
       root.addEventListener("orientationchange", this.syncBannerViewport);
       root.addEventListener("resize", this.fitWelcomeTitle);
       root.addEventListener("resize", this.fitTeamName);
+      root.addEventListener("resize", this.fitScoreNote);
       const fitScriptText = () => {
         this.fitWelcomeTitle();
         this.fitTeamName();
+        this.fitScoreNote();
         root.requestAnimationFrame?.(() => {
           this.fitWelcomeTitle();
           this.fitTeamName();
+          this.fitScoreNote();
         });
       };
       if (root.document?.fonts?.load) {
@@ -974,6 +1003,7 @@
       this.nodes["score-value"].textContent = String(score);
       this.nodes["score-track"].value = Math.max(0, Math.min(maximum, score));
       this.nodes["score-track"].setAttribute("aria-valuetext", this.getText("scoreValueAria", { score }));
+      this.fitScoreNote();
     }
 
     renderResolvedGroups() {

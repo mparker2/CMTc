@@ -18,7 +18,7 @@ function decodePuzzleCategories(blob, key) {
 const PUZZLE = {
   storageKey: "cmt-connections-game-v2",
   title: "CMT Connections",
-  teamNameBlockedNames: ["Matt", "Matty", "Matthew", "Matt P.", "Matt P", "Matty P.", "Matty P", "Matthew P.", "Matthew P"],
+  teamNameBlockedNames: ["Matt", "Matty", "Matthew", "Matt P.", "Matt P", "MattP", "MattP.", "Matty P.", "Matty P", "MattyP", "MattyP.", "Matthew P.", "Matthew P", "MatthewP.", "MatthewP"],
 
   /*
    * All words and phrases shown to players live here. Text in braces is
@@ -36,7 +36,7 @@ const PUZZLE = {
       "Sort the wall into four connected groups.",
       "You can start solving once you have found any four words or more.",
       "You lose points for incorrect words or groups, so guess wisely! Highest scoring team wins!",
-      "Enter your team name to get started:",
+      "Enter your team name below to get started:",
     ],
     teamNameLabel: "Your team name",
     beginButton: "Begin",
