@@ -471,8 +471,7 @@ input:disabled {
 }
 
 .game-heading-row,
-.score-line,
-.progress-line {
+.score-line {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
@@ -538,7 +537,7 @@ input:disabled {
 }
 
 .score-card {
-  margin: 1.15rem 0 0.8rem;
+  margin: 1.15rem 0 0.55rem;
   border: 1px solid rgba(47, 102, 84, 0.2);
   border-radius: 0.35rem;
   background: rgba(223, 233, 217, 0.66);
@@ -598,17 +597,6 @@ input:disabled {
   25% { border-color: rgba(154, 73, 62, 0.75); transform: translateX(-2px); }
   50% { transform: translateX(2px); }
   75% { transform: translateX(-1px); }
-}
-
-.progress-line {
-  margin: 0 0 0.65rem;
-  color: var(--ink-soft);
-  font-size: 0.76rem;
-  font-weight: 600;
-}
-
-.progress-line p {
-  margin: 0;
 }
 
 .board {
@@ -728,13 +716,18 @@ input:disabled {
 }
 
 .word-form {
-  margin-top: 1.2rem;
+  margin-top: 0.55rem;
+}
+
+/* Word feedback uses the fixed banner, so it should not reserve space here. */
+.word-form > .form-message {
+  display: none;
 }
 
 .game-actions {
   display: grid;
   gap: 0.55rem;
-  margin-top: 0.72rem;
+  margin-top: 0.55rem;
 }
 
 .submit-button {
@@ -758,7 +751,14 @@ input:disabled {
 .game-footer {
   display: flex;
   justify-content: center;
-  margin-top: 0.35rem;
+  align-items: center;
+  gap: 0.rem;
+  margin-top: 0.1rem;
+}
+
+.result-separator {
+  color: var(--ink-soft);
+  font-size: 0.81rem;
 }
 
 .feedback-banner {

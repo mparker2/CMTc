@@ -656,10 +656,10 @@
         "page-description", "site-header", "header-eyebrow", "header-title", "welcome-screen",
         "welcome-title", "welcome-copy", "welcome-instructions-title", "team-form", "team-name-label", "team-name", "begin-game", "team-error",
         "game-screen", "playing-as-label", "game-heading", "view-result", "score-card",
-        "score-label", "score-value", "score-track", "score-note", "word-progress", "selection-count", "board",
+        "score-label", "score-value", "score-track", "score-note", "board",
         "resolved-groups", "word-grid", "word-form", "word-input-label",
         "word-input", "add-word", "word-feedback", "game-actions", "submit-group", "deselect-all", "shuffle",
-        "submission-status", "reset-game", "feedback-banner", "completion-dialog", "close-completion",
+        "submission-status", "result-separator", "reset-game", "feedback-banner", "completion-dialog", "close-completion",
         "completion-kicker", "completion-title", "final-score", "points-label", "ranking-label",
         "solve-order-heading", "solve-order", "guesses-heading", "guess-history", "copy-result", "copy-status",
         "fatal-error",
@@ -703,11 +703,6 @@
       this.nodes["score-track"].setAttribute("aria-valuetext", this.getText("scoreValueAria", {
         score: this.config.score.start,
       }));
-      this.nodes["word-progress"].textContent = this.getText("wordsFound", {
-        found: 0,
-        total: wordEntries(this.config).length,
-      });
-      this.nodes["selection-count"].textContent = this.getText("selectionCount", { selected: 0, maximum: 4 });
       this.nodes.board.setAttribute("aria-label", this.getText("boardAria"));
       this.nodes["resolved-groups"].setAttribute("aria-label", this.getText("solvedGroupsAria"));
       this.nodes["word-grid"].setAttribute("aria-label", this.getText("unresolvedWordsAria"));
@@ -955,11 +950,8 @@
       const headingRow = this.nodes["game-heading"].closest(".game-heading-row");
       headingRow?.classList.toggle("has-long-team-name", state.teamName.length >= 15);
       this.fitTeamName();
-      this.nodes["word-progress"].textContent = this.getText("wordsFound", {
-        found: state.enteredWords.length,
-        total: wordEntries(this.config).length,
-      });
       this.nodes["view-result"].hidden = !state.complete;
+      this.nodes["result-separator"].hidden = !state.complete;
       this.renderScore();
       this.renderResolvedGroups();
       this.renderGrid();
@@ -1047,10 +1039,6 @@
         tile.setAttribute("aria-label", `${tile.dataset.word}${selected ? this.getText("tileSelectedSuffix") : ""}`);
       }
 
-      this.nodes["selection-count"].textContent = this.getText("selectionCount", {
-        selected: this.selectedWords.length,
-        maximum: 4,
-      });
       this.nodes["submit-group"].disabled = this.selectedWords.length !== 4 || this.isSubmittingGuess || this.engine.state.complete;
       this.nodes["deselect-all"].disabled = this.selectedWords.length === 0 || this.isSubmittingGuess || this.engine.state.complete;
       const unresolvedWords = this.engine.state.gridSlots.filter(Boolean).length;

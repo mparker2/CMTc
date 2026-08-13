@@ -59,7 +59,6 @@
               <p id="playing-as-label" class="eyebrow"></p>
               <h1 id="game-heading" class="team-heading"></h1>
             </div>
-            <button id="view-result" class="text-button" type="button" hidden></button>
           </div>
 
           <section id="score-card" class="score-card" aria-labelledby="score-label">
@@ -75,11 +74,6 @@
             ></progress>
             <p id="score-note" class="score-note"></p>
           </section>
-
-          <div class="progress-line">
-            <p id="word-progress"></p>
-            <p id="selection-count"></p>
-          </div>
 
           <section id="board" class="board">
             <div id="resolved-groups" class="resolved-groups" role="group"></div>
@@ -112,10 +106,10 @@
             </div>
           </div>
 
-          <p id="submission-status" class="submission-status" aria-live="polite"></p>
-
           <footer class="game-footer">
             <button id="reset-game" class="text-button muted" type="button"></button>
+            <span id="result-separator" class="result-separator" aria-hidden="true" hidden>.</span>
+            <button id="view-result" class="text-button" type="button" hidden></button>
           </footer>
         </section>
       </main>
@@ -150,6 +144,7 @@
 
         <button id="copy-result" class="button button-primary copy-button" type="button"></button>
         <p id="copy-status" class="copy-status" aria-live="polite"></p>
+        <p id="submission-status" class="submission-status" aria-live="polite"></p>
       </div>
     </dialog>
 
