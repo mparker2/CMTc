@@ -53,20 +53,10 @@
 }
 
 @font-face {
-  font-family: "CMT Allura";
-  font-style: normal;
+  font-family: "CMT Wedding Script";
+  font-style: italic;
   font-weight: 400;
-  src: url("assets/fonts/allura-latin-ext-400-normal.woff2") format("woff2");
-  unicode-range: U+0100-02BA, U+1E00-1E9F, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "CMT Allura";
-  font-style: normal;
-  font-weight: 400;
-  src: url("assets/fonts/allura-latin-400-normal.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  src: url("assets/fonts/CMTWeddingScript-Regular.woff2") format("woff2");
   font-display: swap;
 }
 
@@ -285,10 +275,10 @@ input:focus-visible {
   max-width: none;
   margin: 0.2rem 0 1rem;
   color: var(--accent-deep);
-  font-family: "CMT Allura", cursive;
+  font-family: "CMT Wedding Script", cursive;
+  font-style: italic;
   font-size: clamp(2.8rem, 13vw, 5rem);
   font-weight: 400;
-  letter-spacing: 0;
   line-height: 0.83;
   white-space: pre;
 }
@@ -502,7 +492,8 @@ input:disabled {
   max-width: 20ch;
   margin: 0;
   color: var(--accent-deep);
-  font-family: "CMT Allura", cursive;
+  font-family: "CMT Wedding Script", cursive;
+  font-style: italic;
   font-size: clamp(2.55rem, 10.5vw, 3.9rem);
   font-weight: 400;
   line-height: 0.88;
@@ -847,7 +838,8 @@ input:disabled {
 .completion-panel h2 {
   margin: 0.35rem 0 0.8rem;
   color: var(--accent-deep);
-  font-family: "CMT Allura", cursive;
+  font-family: "CMT Wedding Script", cursive;
+  font-style: italic;
   font-size: clamp(3.15rem, 15vw, 4.8rem);
   font-weight: 400;
   line-height: 0.85;

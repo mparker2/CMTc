@@ -16,8 +16,7 @@ const files = await Promise.all(
     "assets/fonts/lora-latin-ext-400-normal.woff2",
     "assets/fonts/lora-latin-ext-600-normal.woff2",
     "assets/fonts/lora-latin-ext-700-normal.woff2",
-    "assets/fonts/allura-latin-400-normal.woff2",
-    "assets/fonts/allura-latin-ext-400-normal.woff2",
+    "assets/fonts/CMTWeddingScript-Regular.woff2",
   ].map(async (name) => [
     name,
     await readFile(new URL(`../${name}`, import.meta.url)),
@@ -49,8 +48,7 @@ const contentTypes = {
   "/assets/fonts/lora-latin-ext-400-normal.woff2": "font/woff2",
   "/assets/fonts/lora-latin-ext-600-normal.woff2": "font/woff2",
   "/assets/fonts/lora-latin-ext-700-normal.woff2": "font/woff2",
-  "/assets/fonts/allura-latin-400-normal.woff2": "font/woff2",
-  "/assets/fonts/allura-latin-ext-400-normal.woff2": "font/woff2",
+  "/assets/fonts/CMTWeddingScript-Regular.woff2": "font/woff2",
 };
 
 export default {
