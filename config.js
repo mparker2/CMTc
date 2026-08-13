@@ -133,8 +133,11 @@ const PUZZLE = {
     start: 100,
     incorrectPenalty: 5,
     rankings: [
-      { minScore: 100, label: "Perfect" },
-      { minScore: 90, label: "Excellent" },
+      { minScore: 150, label: "Show off!" },
+      { minScore: 135, label: "Exceptional" },
+      { minScore: 101, label: "You needed those bonus points..." },
+      { minScore: 100, label: "Perfect!" },
+      { minScore: 85, label: "Excellent" },
       { minScore: 75, label: "Not bad" },
       { minScore: 50, label: "Made it in the end" },
       { minScore: 0, label: "Better luck... next time??" },
