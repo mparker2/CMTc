@@ -77,7 +77,7 @@ const PUZZLE = {
     guessAria: "Guess {number}: {colours}",
     closeResultsAria: "Close results",
     copyResultButton: "Copy result",
-    bonusRoundTitle: "Bonus round unlocked!",
+    bonusRoundTitle: "Bonus Round Unlocked!",
     bonusRoundInstructions: "There are a lot of Matts at this wedding...\nCan you find them?",
     bonusRoundSubmit: "Submit answers",
     bonusRoundLivesAria: "Lives remaining: {count}",

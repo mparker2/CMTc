@@ -660,6 +660,7 @@
       this.resultSubmissionInFlight = false;
       this.deferBonusGold = false;
       this.bonusGoldTimer = null;
+      this.scrollLock = null;
       this.bannerTimer = null;
       this.guessUnlockTimer = null;
       this.nodes = {};
@@ -1023,11 +1024,41 @@
       const dialog = this.nodes["bonus-dialog"];
       if (!dialog.hidden) return;
       dialog.hidden = false;
+      this.lockPageScroll();
     }
 
     closeBonusRound() {
       const dialog = this.nodes["bonus-dialog"];
+      if (dialog.hidden) return;
       dialog.hidden = true;
+      this.unlockPageScroll();
+    }
+
+    lockPageScroll() {
+      if (this.scrollLock) return;
+      const scrollY = root.scrollY;
+      this.scrollLock = {
+        scrollY,
+        bodyPosition: document.body.style.position,
+        bodyTop: document.body.style.top,
+        bodyWidth: document.body.style.width,
+        bodyOverflow: document.body.style.overflow,
+      };
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = "100%";
+      document.body.style.overflow = "hidden";
+    }
+
+    unlockPageScroll() {
+      if (!this.scrollLock) return;
+      const { scrollY, bodyPosition, bodyTop, bodyWidth, bodyOverflow } = this.scrollLock;
+      document.body.style.position = bodyPosition;
+      document.body.style.top = bodyTop;
+      document.body.style.width = bodyWidth;
+      document.body.style.overflow = bodyOverflow;
+      this.scrollLock = null;
+      root.scrollTo(0, scrollY);
     }
 
     renderBonusRound() {
@@ -1443,6 +1474,7 @@
       if (dialog.open) return;
       if (typeof dialog.showModal === "function") dialog.showModal();
       else dialog.setAttribute("open", "");
+      this.lockPageScroll();
       this.nodes["copy-result"].focus();
     }
 
@@ -1450,7 +1482,8 @@
       const dialog = this.nodes["completion-dialog"];
       if (typeof dialog.close === "function" && dialog.open) dialog.close();
       else dialog.removeAttribute("open");
-      this.nodes["view-result"].focus();
+      this.unlockPageScroll();
+      this.nodes["view-result"].focus({ preventScroll: true });
     }
 
     async copyResult() {
@@ -1502,8 +1535,10 @@
     closeCompletionIfOpen() {
       const dialog = this.nodes["completion-dialog"];
       if (!dialog) return;
+      const wasOpen = typeof dialog.open === "boolean" ? dialog.open : dialog.hasAttribute("open");
       if (typeof dialog.close === "function" && dialog.open) dialog.close();
       else dialog.removeAttribute("open");
+      if (wasOpen) this.unlockPageScroll();
     }
 
     isEndpointConfigured() {
