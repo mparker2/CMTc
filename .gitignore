@@ -1,0 +1,22 @@
+# JavaScript / Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm/
+.yarn/
+coverage/
+dist/
+build/
+.cache/
+
+# Environment and local tooling
+.env
+.env.*
+!.env.example
+.DS_Store
+
+# Jupyter notebooks and generated checkpoint copies
+*.ipynb
+.ipynb_checkpoints/
