@@ -1011,6 +1011,7 @@ input:disabled {
 
 .bonus-instructions {
   overflow-wrap: anywhere;
+  white-space: pre-line;
   margin: 0 auto 0.8rem;
   max-width: 24rem;
   color: var(--ink-soft);

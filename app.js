@@ -209,13 +209,14 @@
     if (!String(config.storageKey ?? "").trim()) {
       errors.push("PUZZLE.storageKey must not be empty.");
     }
-    const bonusNames = config.bonusRound?.surnames;
     const bonusAnswers = config.bonusRound?.correctSurnames;
-    if (!Array.isArray(bonusNames) || bonusNames.length !== 9 || new Set(bonusNames.map(normaliseWord)).size !== 9) {
-      errors.push("PUZZLE.bonusRound.surnames must contain nine unique names.");
+    const bonusIncorrect = config.bonusRound?.incorrectSurnames;
+    const bonusNames = [...(bonusAnswers ?? []), ...(bonusIncorrect ?? [])];
+    if (!Array.isArray(bonusIncorrect) || bonusIncorrect.length < 4 || new Set(bonusNames.map(normaliseWord)).size !== bonusNames.length) {
+      errors.push("PUZZLE.bonusRound.incorrectSurnames must contain at least four names distinct from the correct answers.");
     }
-    if (!Array.isArray(bonusAnswers) || bonusAnswers.length !== 4 || bonusAnswers.some((name) => !bonusNames?.includes(name))) {
-      errors.push("PUZZLE.bonusRound.correctSurnames must contain four configured names.");
+    if (!Array.isArray(bonusAnswers) || bonusAnswers.length < 1 || new Set(bonusAnswers).size !== bonusAnswers.length || bonusAnswers.some((name) => !bonusNames?.includes(name))) {
+      errors.push("PUZZLE.bonusRound.correctSurnames must contain unique configured names.");
     }
     if (!Number.isFinite(Number(config.bonusRound?.points)) || Number(config.bonusRound.points) <= 0) {
       errors.push("PUZZLE.bonusRound.points must be positive.");
@@ -262,6 +263,7 @@
       bonusRoundUnlocked: false,
       bonusRoundCompleted: false,
       bonusRoundLives: 3,
+      bonusRoundSurnames: null,
       resultSubmitted: false,
       submissionAttemptedAt: null,
     };
@@ -331,6 +333,7 @@
       endTimestamp: state.endTimestamp,
       elapsedTime: elapsedTime(state.startTimestamp, state.endTimestamp),
       cheatUsed: Boolean(state.cheatUsed),
+      bonusCompleted: Boolean(state.bonusRoundCompleted),
       categoryOrderEmoji: categoryOrderEmoji(state, config),
       guessHistoryEmoji: guessHistoryEmoji(state, "\n"),
     };
@@ -442,6 +445,16 @@
     const score = Number.isFinite(rawScore)
       ? Math.max(0, Math.min(Number(config.score.start) + Number(config.bonusRound?.points || 0), rawScore))
       : Number(config.score.start);
+    const storedBonusSurnames = Array.isArray(rawState.bonusRoundSurnames)
+      && rawState.bonusRoundSurnames.length === 9
+      && new Set(rawState.bonusRoundSurnames).size === 9
+      && config.bonusRound.correctSurnames.every((name) => rawState.bonusRoundSurnames.includes(name))
+      && rawState.bonusRoundSurnames.every((name) => (
+        config.bonusRound.correctSurnames.includes(name)
+        || config.bonusRound.incorrectSurnames.includes(name)
+      ))
+      ? [...rawState.bonusRoundSurnames]
+      : null;
 
     return {
       schemaVersion: STATE_SCHEMA_VERSION,
@@ -461,6 +474,7 @@
       bonusRoundUnlocked: Boolean(rawState.bonusRoundUnlocked),
       bonusRoundCompleted: Boolean(rawState.bonusRoundCompleted),
       bonusRoundLives: Math.max(0, Math.min(3, Number.isFinite(Number(rawState.bonusRoundLives)) ? Number(rawState.bonusRoundLives) : 3)),
+      bonusRoundSurnames: storedBonusSurnames,
       resultSubmitted: complete && Boolean(rawState.resultSubmitted),
       submissionAttemptedAt: isIsoTimestamp(rawState.submissionAttemptedAt) ? rawState.submissionAttemptedAt : null,
     };
@@ -1019,7 +1033,15 @@
       if (!this.engine || this.engine.state.bonusRoundCompleted) return;
       this.bonusSelectedSurnames = new Set();
       this.bonusLives = this.engine.state.bonusRoundLives ?? 3;
-      this.bonusSurnames = shuffleArray([...this.config.bonusRound.surnames]);
+      if (!Array.isArray(this.engine.state.bonusRoundSurnames)) {
+        const incorrectSurnames = shuffleArray([...this.config.bonusRound.incorrectSurnames]).slice(0, 4);
+        this.engine.state.bonusRoundSurnames = shuffleArray([
+          ...this.config.bonusRound.correctSurnames,
+          ...incorrectSurnames,
+        ]);
+        this.persist();
+      }
+      this.bonusSurnames = [...this.engine.state.bonusRoundSurnames];
       this.renderBonusRound();
       const dialog = this.nodes["bonus-dialog"];
       if (!dialog.hidden) return;
@@ -1064,7 +1086,7 @@
     renderBonusRound() {
       const grid = this.nodes["bonus-grid"];
       grid.replaceChildren();
-      for (const surname of this.bonusSurnames ?? this.config.bonusRound.surnames) {
+      for (const surname of this.bonusSurnames) {
         const button = document.createElement("button");
         button.type = "button";
         button.className = "bonus-surname";
@@ -1077,7 +1099,7 @@
       const lives = Math.max(0, this.bonusLives ?? 3);
       this.nodes["bonus-lives"].textContent = "♥".repeat(lives) + "♡".repeat(3 - lives);
       this.nodes["bonus-lives"].setAttribute("aria-label", this.getText("bonusRoundLivesAria", { count: lives }));
-      this.nodes["bonus-submit"].disabled = this.bonusSelectedSurnames.size !== 4;
+      this.nodes["bonus-submit"].disabled = this.bonusSelectedSurnames.size === 0;
     }
 
     toggleBonusSurname(event) {
@@ -1085,12 +1107,12 @@
       if (!button || this.nodes["bonus-dialog"].hidden) return;
       const surname = button.dataset.surname;
       if (this.bonusSelectedSurnames.has(surname)) this.bonusSelectedSurnames.delete(surname);
-      else if (this.bonusSelectedSurnames.size < 4) this.bonusSelectedSurnames.add(surname);
+      else this.bonusSelectedSurnames.add(surname);
       this.renderBonusRound();
     }
 
     submitBonusRound() {
-      if (!this.engine || this.engine.state.bonusRoundCompleted || this.bonusSelectedSurnames.size !== 4) return;
+      if (!this.engine || this.engine.state.bonusRoundCompleted || this.bonusSelectedSurnames.size === 0) return;
       const answers = new Set(this.config.bonusRound.correctSurnames);
       const correct = this.bonusSelectedSurnames.size === answers.size
         && [...this.bonusSelectedSurnames].every((surname) => answers.has(surname));

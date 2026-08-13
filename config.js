@@ -20,8 +20,8 @@ const PUZZLE = {
   title: "CMT Connections",
   teamNameBlockedNames: ["Matt", "Matty", "Matthew", "Matt P.", "Matt P", "MattP", "MattP.", "Matty P.", "Matty P", "MattyP", "MattyP.", "Matthew P.", "Matthew P", "MatthewP.", "MatthewP"],
   bonusRound: {
-    surnames: ["Proctor", "Fleming", "Holland", "Hodgeson", "Dent", "Shaw", "Gooddy", "Davis", "Willis"],
-    correctSurnames: ["Proctor", "Fleming", "Holland", "Hodgeson"],
+    correctSurnames: ["Proctor", "Fleming", "Holland", "Hodgeson", "Parker"],
+    incorrectSurnames: ["Dent", "Shaw", "Gooddy", "Davis", "Willis", "Meehan", "Edey", "Dadourian", "Delaney", "Lesbirel", "Dong", "Samwald"],
     points: 50,
   },
 
@@ -78,7 +78,7 @@ const PUZZLE = {
     closeResultsAria: "Close results",
     copyResultButton: "Copy result",
     bonusRoundTitle: "Bonus Round Unlocked!",
-    bonusRoundInstructions: "There are a lot of Matts at this wedding...\nCan you find them?",
+    bonusRoundInstructions: "There are a lot of Matts at this wedding...\nCan you find them all?",
     bonusRoundSubmit: "Submit answers",
     bonusRoundLivesAria: "Lives remaining: {count}",
     bonusRoundSuccess: "Correct! {points} points added.",
