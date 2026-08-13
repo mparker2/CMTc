@@ -651,7 +651,7 @@
 
     captureNodes() {
       const ids = [
-        "page-description", "site-header", "header-eyebrow", "header-title", "welcome-screen", "welcome-location",
+        "page-description", "site-header", "header-eyebrow", "header-title", "welcome-screen",
         "welcome-title", "welcome-copy", "welcome-instructions-title", "team-form", "team-name-label", "team-name", "begin-game", "team-error",
         "game-screen", "playing-as-label", "game-heading", "view-result", "score-card",
         "score-label", "score-value", "score-track", "score-note", "word-progress", "selection-count", "board",
@@ -673,7 +673,6 @@
       // The decorative Allura font renders its regular space unusually tightly;
       // use a non-breaking space so the separation remains visibly present.
       this.nodes["header-title"].textContent = String(this.config.title).replace(/ /gu, "\u00a0");
-      this.nodes["welcome-location"].textContent = this.getText("welcomeLocation");
       this.nodes["welcome-title"].textContent = this.getText("welcomeTitle");
       this.nodes["welcome-instructions-title"].textContent = this.getText("welcomeInstructionsTitle");
       this.nodes["welcome-copy"].replaceChildren(

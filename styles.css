@@ -177,7 +177,7 @@ input:focus-visible {
   width: min(100%, 46rem);
   flex: 1 0 auto;
   margin: 0 auto;
-  padding: 1rem max(0.85rem, env(safe-area-inset-right)) 2rem max(0.85rem, env(safe-area-inset-left));
+  padding: 0.75rem max(0.85rem, env(safe-area-inset-right)) 1.1rem max(0.85rem, env(safe-area-inset-left));
 }
 
 .site-header {
@@ -237,12 +237,12 @@ input:focus-visible {
 .welcome-card {
   position: relative;
   overflow: hidden;
-  padding: clamp(1.65rem, 6vw, 3.7rem) clamp(1.2rem, 6vw, 3.5rem);
+  padding: clamp(1.65rem, 6vw, 3.7rem) clamp(1.2rem, 6vw, 3.5rem) 1rem;
 }
 
 .welcome-card h1 {
   max-width: 17ch;
-  margin: 0.55rem 0 1rem;
+  margin: 0.2rem 0 1rem;
   color: var(--accent-deep);
   font-family: "CMT Allura", cursive;
   font-size: clamp(2.8rem, 13vw, 5rem);
@@ -902,7 +902,7 @@ input:disabled {
 
 @media (min-width: 38rem) {
   .page-shell {
-    padding-top: 1.5rem;
+    padding-top: 0.75rem;
   }
 
   .game-screen {
