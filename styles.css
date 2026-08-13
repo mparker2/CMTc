@@ -99,16 +99,21 @@ body {
   min-height: 100dvh;
   margin: 0;
   color: var(--ink);
-  background-color: var(--paper);
-  background-image:
-    linear-gradient(rgba(245, 247, 237, 0.12), rgba(245, 247, 237, 0.12)),
-    url("assets/watercolour-background.png");
-  background-position: center top;
-  background-size: min(150vw, 88rem) auto;
-  background-attachment: fixed;
+  background: transparent;
 }
 
 body::before {
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  background:
+    linear-gradient(rgba(245, 247, 237, 0.12), rgba(245, 247, 237, 0.12)),
+    url("assets/watercolour-background.png") center top / min(150vw, 88rem) auto no-repeat;
+  content: "";
+  pointer-events: none;
+}
+
+body::after {
   position: fixed;
   z-index: -1;
   inset: 0;
