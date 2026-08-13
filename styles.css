@@ -249,7 +249,7 @@ input:focus-visible {
   border: 0;
   border-radius: 50%;
   background: transparent;
-  cursor: pointer;
+  cursor: default;
   -webkit-touch-callout: none;
   touch-action: none;
   user-select: none;
