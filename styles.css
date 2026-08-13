@@ -628,6 +628,9 @@ input:disabled {
   border-radius: 0.28rem;
   padding: 0.62rem 0.55rem;
   text-align: center;
+}
+
+.resolved-group.is-new {
   animation: group-in 360ms ease both;
 }
 

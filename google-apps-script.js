@@ -10,6 +10,7 @@ const RESULTS_HEADERS = [
   "start_timestamp",
   "end_timestamp",
   "elapsed_time",
+  "cheat_used",
   "category_order",
   "guess_history",
   "session_id",
@@ -39,6 +40,10 @@ function doPost(e) {
       sheet.insertColumnAfter(4);
       sheet.getRange(1, 5).setValue("elapsed_time");
     }
+    if (String(sheet.getRange(1, 6).getValue()) !== "cheat_used") {
+      sheet.insertColumnAfter(5);
+      sheet.getRange(1, 6).setValue("cheat_used");
+    }
 
     if (sessionAlreadyRecorded(sheet, String(data.sessionId))) {
       return jsonResponse({ ok: true, duplicate: true });
@@ -50,6 +55,7 @@ function doPost(e) {
       safeText(data.startTimestamp),
       safeText(data.endTimestamp),
       safeText(data.elapsedTime),
+      data.cheatUsed ? "true" : "false",
       safeText(data.categoryOrderEmoji),
       safeText(data.guessHistoryEmoji),
       safeText(data.sessionId),
@@ -63,7 +69,7 @@ function doPost(e) {
 
 function sessionAlreadyRecorded(sheet, sessionId) {
   const firstDataRow = 2;
-  const sessionColumn = 8;
+  const sessionColumn = 9;
   const rowCount = sheet.getLastRow() - 1;
   if (rowCount <= 0) return false;
 

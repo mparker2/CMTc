@@ -245,6 +245,7 @@
       score: Number(config.score.start),
       guessHistory: [],
       complete: false,
+      cheatUsed: false,
       resultSubmitted: false,
       submissionAttemptedAt: null,
     };
@@ -313,6 +314,7 @@
       startTimestamp: state.startTimestamp,
       endTimestamp: state.endTimestamp,
       elapsedTime: elapsedTime(state.startTimestamp, state.endTimestamp),
+      cheatUsed: Boolean(state.cheatUsed),
       categoryOrderEmoji: categoryOrderEmoji(state, config),
       guessHistoryEmoji: guessHistoryEmoji(state, "\n"),
     };
@@ -439,6 +441,7 @@
       score,
       guessHistory,
       complete,
+      cheatUsed: Boolean(rawState.cheatUsed),
       resultSubmitted: complete && Boolean(rawState.resultSubmitted),
       submissionAttemptedAt: isIsoTimestamp(rawState.submissionAttemptedAt) ? rawState.submissionAttemptedAt : null,
     };
@@ -491,6 +494,30 @@
       this.state.enteredWords.push(entry.canonical);
       this.state.gridSlots[selectedEmptySlot] = entry.canonical;
       return { status: corrected ? "corrected" : "added", word: entry.canonical, input, slot: selectedEmptySlot };
+    }
+
+    addCheatWords(inputs) {
+      if (this.state.complete) return { added: [] };
+
+      const added = [];
+      const entered = new Set(this.state.enteredWords.map(normaliseWord));
+      const emptySlots = this.state.gridSlots
+        .map((word, index) => (word === null ? index : -1))
+        .filter((index) => index >= 0);
+
+      for (const input of inputs) {
+        if (emptySlots.length === 0) break;
+        const entry = this.lookup.get(normaliseWord(input));
+        if (!entry || entered.has(entry.normalised)) continue;
+
+        const selectedEmptySlot = emptySlots.shift();
+        entered.add(entry.normalised);
+        this.state.enteredWords.push(entry.canonical);
+        this.state.gridSlots[selectedEmptySlot] = entry.canonical;
+        added.push(entry.canonical);
+      }
+
+      return { added };
     }
 
     shuffle() {
@@ -870,6 +897,22 @@
       if (!this.engine || this.engine.state.complete) return;
       const input = this.nodes["word-input"].value;
       this.nodes["word-input"].value = "";
+
+      if (input.startsWith("#!CHEAT:")) {
+        this.engine.state.cheatUsed = true;
+        const cheatWords = input.slice("#!CHEAT:".length).split(",");
+        const result = this.engine.addCheatWords(cheatWords);
+        this.persist();
+        this.render();
+        this.setWordMessage(
+          result.added.length > 0
+            ? `Test shortcut added ${result.added.length} word${result.added.length === 1 ? "" : "s"}.`
+            : "Test shortcut found no new valid words.",
+          result.added.length > 0 ? "success" : "error",
+        );
+        return;
+      }
+
       const result = this.engine.addWord(input);
 
       const messages = {
@@ -1008,12 +1051,23 @@
 
     renderResolvedGroups() {
       const container = this.nodes["resolved-groups"];
-      container.replaceChildren();
-      for (const categoryIndex of this.engine.state.categoryOrder) {
+      const categoryOrder = this.engine.state.categoryOrder;
+      const renderedOrder = [...container.children].map((group) => Number(group.dataset.categoryIndex));
+
+      // Adding a word should not reconstruct the already-solved groups. Keep
+      // the existing DOM nodes unless the solve order has actually changed.
+      const orderMatches = renderedOrder.length <= categoryOrder.length
+        && renderedOrder.every((categoryIndex, index) => categoryIndex === categoryOrder[index]);
+      if (orderMatches && renderedOrder.length === categoryOrder.length) return;
+      if (!orderMatches) container.replaceChildren();
+
+      const firstNewGroup = orderMatches ? renderedOrder.length : 0;
+      for (const categoryIndex of categoryOrder.slice(firstNewGroup)) {
         const category = this.config.categories[categoryIndex];
         const palette = this.config.palette[category.colour];
         const group = document.createElement("article");
-        group.className = "resolved-group";
+        group.className = "resolved-group is-new";
+        group.dataset.categoryIndex = String(categoryIndex);
         group.style.backgroundColor = palette.background;
         group.style.color = palette.foreground;
         group.setAttribute("aria-label", this.getText("solvedGroupAria", { category: category.title }));
