@@ -187,19 +187,61 @@ input:focus-visible {
   margin: 0.35rem 0 1.25rem;
 }
 
+.site-header > div:last-child {
+  min-width: 0;
+  overflow: visible;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .brand-mark img {
+    animation: wheel-roll-in 1.8s cubic-bezier(0.2, 0.8, 0.25, 1) both;
+    transform-origin: center !important;
+  }
+
+  .site-header > div:last-child {
+    animation: header-copy-reveal 0.65s ease-out 1.25s both;
+  }
+}
+
+@keyframes wheel-roll-in {
+  from {
+    opacity: 0;
+    transform: translateX(110vw) rotate(0deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) rotate(-720deg);
+  }
+}
+
+@keyframes header-copy-reveal {
+  from {
+    opacity: 0;
+    transform: translateX(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 .brand-mark {
   display: grid;
   width: 3.2rem;
   height: 3.2rem;
   flex: 0 0 auto;
+  overflow: visible;
   place-items: center;
 }
 
 .brand-mark img {
   display: block;
-  width: 100%;
-  height: 100%;
+  align-self: start;
+  justify-self: start;
+  width: 110%;
+  height: 110%;
   object-fit: contain;
+  transform-origin: top left;
 }
 
 .eyebrow,
@@ -214,14 +256,12 @@ input:focus-visible {
 }
 
 .wordmark {
+  display: block;
   margin: 0;
-  color: var(--accent-deep);
-  font-family: "CMT Allura", cursive;
-  font-size: 1.95rem;
-  line-height: 0.9;
-  white-space: nowrap;
-  word-spacing: 0.12em;
-  transform: translateY(0.5rem) scale(1.5);
+  width: clamp(8rem, 38vw, 12rem);
+  height: auto;
+  max-width: 100%;
+  transform: translateY(0.5rem) rotate(-1.5deg) scale(1.35);
   transform-origin: left center;
 }
 

@@ -617,6 +617,7 @@
       this.nodes = {};
       this.syncBannerViewport = this.syncBannerViewport.bind(this);
       this.fitWelcomeTitle = this.fitWelcomeTitle.bind(this);
+      this.fitTeamName = this.fitTeamName.bind(this);
     }
 
     init() {
@@ -671,9 +672,7 @@
       this.nodes["page-description"].content = this.getText("metaDescription");
       this.nodes["site-header"].setAttribute("aria-label", this.config.title);
       this.nodes["header-eyebrow"].textContent = this.getText("headerEyebrow");
-      // The decorative Allura font renders its regular space unusually tightly;
-      // use a non-breaking space so the separation remains visibly present.
-      this.nodes["header-title"].textContent = String(this.config.title).replace(/ /gu, "\u00a0");
+      this.nodes["header-title"].alt = this.config.title;
       this.nodes["welcome-title"].textContent = this.getText("welcomeTitle");
       this.fitWelcomeTitle();
       this.nodes["welcome-instructions-title"].textContent = this.getText("welcomeInstructionsTitle");
@@ -748,6 +747,43 @@
       title.style.fontSize = `${low}px`;
     }
 
+    fitTeamName() {
+      const heading = this.nodes["game-heading"];
+      if (!heading || !heading.isConnected || !this.engine) return;
+
+      // Measure a copy without the decorative transform. Measuring the live
+      // transformed heading can make long names shrink much more than needed.
+      const measurement = heading.cloneNode(true);
+      const headingStyle = getComputedStyle(heading);
+      // This is the pre-transform width; the existing scale is applied to the
+      // visible heading separately, so this keeps the scaled result in bounds.
+      const availableWidth = heading.clientWidth;
+      const maximum = Number.parseFloat(headingStyle.fontSize);
+      if (!availableWidth || !maximum) return;
+
+      measurement.textContent = heading.textContent;
+      measurement.style.position = "absolute";
+      measurement.style.visibility = "hidden";
+      measurement.style.pointerEvents = "none";
+      measurement.style.width = `${availableWidth}px`;
+      measurement.style.maxWidth = "none";
+      measurement.style.transform = "none";
+      measurement.style.fontSize = `${maximum}px`;
+      document.body.append(measurement);
+
+      let low = 10;
+      let high = maximum;
+      for (let iteration = 0; iteration < 12; iteration += 1) {
+        const candidate = (low + high) / 2;
+        measurement.style.fontSize = `${candidate}px`;
+        const fitsLines = measurement.getBoundingClientRect().height <= candidate * 0.88 * 2 + 1;
+        if (fitsLines) low = candidate;
+        else high = candidate;
+      }
+      measurement.remove();
+      heading.style.fontSize = `${low}px`;
+    }
+
     bindEvents() {
       this.nodes["team-form"].addEventListener("submit", (event) => this.startGame(event));
       this.nodes["word-form"].addEventListener("submit", (event) => this.addWord(event));
@@ -765,13 +801,18 @@
       root.visualViewport?.addEventListener?.("scroll", this.syncBannerViewport);
       root.addEventListener("orientationchange", this.syncBannerViewport);
       root.addEventListener("resize", this.fitWelcomeTitle);
-      root.fonts?.ready?.then(this.fitWelcomeTitle);
+      root.addEventListener("resize", this.fitTeamName);
+      root.fonts?.ready?.then(() => {
+        this.fitWelcomeTitle();
+        this.fitTeamName();
+      });
       this.syncBannerViewport();
     }
 
     startGame(event) {
       event.preventDefault();
       const teamName = normaliseTeamName(this.nodes["team-name"].value);
+      this.nodes["team-name"].value = "";
       if (!teamName) {
         this.setTeamMessage(this.getText("teamNameRequired"), "error");
         return;
@@ -795,7 +836,9 @@
     addWord(event) {
       event.preventDefault();
       if (!this.engine || this.engine.state.complete) return;
-      const result = this.engine.addWord(this.nodes["word-input"].value);
+      const input = this.nodes["word-input"].value;
+      this.nodes["word-input"].value = "";
+      const result = this.engine.addWord(input);
 
       const messages = {
         empty: [this.getText("emptyWord"), "error"],
@@ -812,7 +855,6 @@
         return;
       }
 
-      this.nodes["word-input"].value = "";
       this.persist();
       this.render();
       const foundCount = this.engine.state.enteredWords.length;
@@ -912,6 +954,7 @@
       this.nodes["game-heading"].textContent = state.teamName;
       const headingRow = this.nodes["game-heading"].closest(".game-heading-row");
       headingRow?.classList.toggle("has-long-team-name", state.teamName.length >= 15);
+      this.fitTeamName();
       this.nodes["word-progress"].textContent = this.getText("wordsFound", {
         found: state.enteredWords.length,
         total: wordEntries(this.config).length,
