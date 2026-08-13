@@ -616,6 +616,7 @@
       this.guessUnlockTimer = null;
       this.nodes = {};
       this.syncBannerViewport = this.syncBannerViewport.bind(this);
+      this.fitWelcomeTitle = this.fitWelcomeTitle.bind(this);
     }
 
     init() {
@@ -674,6 +675,7 @@
       // use a non-breaking space so the separation remains visibly present.
       this.nodes["header-title"].textContent = String(this.config.title).replace(/ /gu, "\u00a0");
       this.nodes["welcome-title"].textContent = this.getText("welcomeTitle");
+      this.fitWelcomeTitle();
       this.nodes["welcome-instructions-title"].textContent = this.getText("welcomeInstructionsTitle");
       this.nodes["welcome-copy"].replaceChildren(
         ...(Array.isArray(this.config.text.welcomeInstructions) ? this.config.text.welcomeInstructions : [this.config.text.welcomeInstructions])
@@ -728,6 +730,24 @@
       this.nodes["copy-result"].textContent = this.getText("copyResultButton");
     }
 
+    fitWelcomeTitle() {
+      const title = this.nodes["welcome-title"];
+      if (!title || !title.isConnected) return;
+
+      const availableWidth = title.clientWidth;
+      if (availableWidth <= 0) return;
+
+      let low = 24;
+      let high = 96;
+      for (let iteration = 0; iteration < 12; iteration += 1) {
+        const candidate = (low + high) / 2;
+        title.style.fontSize = `${candidate}px`;
+        if (title.scrollWidth <= availableWidth) low = candidate;
+        else high = candidate;
+      }
+      title.style.fontSize = `${low}px`;
+    }
+
     bindEvents() {
       this.nodes["team-form"].addEventListener("submit", (event) => this.startGame(event));
       this.nodes["word-form"].addEventListener("submit", (event) => this.addWord(event));
@@ -744,6 +764,8 @@
       root.visualViewport?.addEventListener?.("resize", this.syncBannerViewport);
       root.visualViewport?.addEventListener?.("scroll", this.syncBannerViewport);
       root.addEventListener("orientationchange", this.syncBannerViewport);
+      root.addEventListener("resize", this.fitWelcomeTitle);
+      root.fonts?.ready?.then(this.fitWelcomeTitle);
       this.syncBannerViewport();
     }
 

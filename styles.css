@@ -241,7 +241,8 @@ input:focus-visible {
 }
 
 .welcome-card h1 {
-  max-width: 17ch;
+  width: 100%;
+  max-width: none;
   margin: 0.2rem 0 1rem;
   color: var(--accent-deep);
   font-family: "CMT Allura", cursive;
@@ -249,7 +250,7 @@ input:focus-visible {
   font-weight: 400;
   letter-spacing: 0;
   line-height: 0.83;
-  white-space: pre-line;
+  white-space: pre;
 }
 
 .welcome-instructions {
