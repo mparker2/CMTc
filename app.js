@@ -753,17 +753,14 @@
       const teamName = normaliseTeamName(this.nodes["team-name"].value);
       if (!teamName) {
         this.setTeamMessage(this.getText("teamNameRequired"), "error");
-        this.nodes["team-name"].focus();
         return;
       }
       if (teamName.length < 3) {
         this.setTeamMessage(this.getText("teamNameTooShort"), "error");
-        this.nodes["team-name"].focus();
         return;
       }
       if (isTooVagueTeamName(teamName, this.config)) {
         this.setTeamMessage(this.getText("teamNameTooVague"), "error");
-        this.nodes["team-name"].focus();
         return;
       }
 
@@ -772,7 +769,6 @@
       this.persist();
       this.showGame();
       this.render();
-      this.nodes["word-input"].focus();
     }
 
     addWord(event) {
@@ -792,7 +788,6 @@
         this.persist();
         if (result.deducted) this.render();
         this.setWordMessage(message, tone);
-        this.nodes["word-input"].select();
         return;
       }
 
@@ -805,7 +800,6 @@
         : this.getText("wordAdded", { word: result.word })];
       if (foundCount < 4) parts.push(this.getText("findMoreWords", { count: 4 - foundCount }));
       this.setWordMessage(parts.join(" "), "success");
-      this.nodes["word-input"].focus();
     }
 
     toggleTile(event) {
@@ -1121,7 +1115,6 @@
       this.nodes["feedback-banner"].classList.remove("is-visible");
       this.nodes["feedback-banner"].hidden = true;
       this.showWelcome();
-      this.nodes["team-name"].focus();
     }
 
     closeCompletionIfOpen() {
