@@ -911,6 +911,11 @@
       this.nodes["team-form"].addEventListener("submit", (event) => this.startGame(event));
       this.nodes["word-form"].addEventListener("submit", (event) => this.addWord(event));
       this.nodes["word-grid"].addEventListener("click", (event) => this.toggleTile(event));
+      this.nodes["word-grid"].addEventListener("pointerdown", (event) => this.startPhotoLongPress(event));
+      this.nodes["word-grid"].addEventListener("pointerup", (event) => this.cancelPhotoLongPress(event));
+      this.nodes["word-grid"].addEventListener("pointercancel", (event) => this.cancelPhotoLongPress(event));
+      this.nodes["word-grid"].addEventListener("pointerleave", (event) => this.cancelPhotoLongPress(event));
+      this.nodes["word-grid"].addEventListener("contextmenu", (event) => event.preventDefault());
       this.nodes["submit-group"].addEventListener("click", () => this.submitGroup());
       this.nodes["deselect-all"].addEventListener("click", () => this.deselectAll());
       this.nodes.shuffle.addEventListener("click", () => this.shuffle());
@@ -1445,6 +1450,10 @@
     toggleTile(event) {
       const tile = event.target.closest(".word-tile");
       if (!tile || tile.disabled || !this.engine || this.engine.state.complete) return;
+      if (this.photoLongPressHandled === tile) {
+        this.photoLongPressHandled = null;
+        return;
+      }
       const word = tile.dataset.word;
       const selectedIndex = this.selectedWords.findIndex((selected) => normaliseWord(selected) === normaliseWord(word));
       if (selectedIndex >= 0) {
@@ -1455,6 +1464,42 @@
         this.setWordMessage(this.getText("maxSelection"), "error");
       }
       this.updateSelectionUi();
+    }
+
+    photoFilenameFor(word) {
+      const clues = this.config.photoClues;
+      if (!clues || typeof clues !== "object") return null;
+      const match = Object.entries(clues).find(([configuredWord]) => (
+        normaliseWord(configuredWord) === normaliseWord(word)
+      ));
+      return match?.[1] ? String(match[1]) : null;
+    }
+
+    startPhotoLongPress(event) {
+      const tile = event.target.closest(".word-tile");
+      if (!tile || !this.photoFilenameFor(tile.dataset.word)) return;
+      this.cancelPhotoLongPress(event);
+      this.photoLongPressTile = tile;
+      this.photoLongPressTimer = root.setTimeout(() => {
+        if (!this.photoLongPressTile || this.photoLongPressTile !== tile) return;
+        tile.classList.add("is-photo-revealed");
+        this.photoLongPressHandled = tile;
+        this.photoLongPressTimer = null;
+        root.setTimeout(() => {
+          if (!tile.isConnected) return;
+          tile.classList.remove("is-photo-revealed");
+          tile.classList.add("is-photo-returning");
+          tile.addEventListener("animationend", () => tile.classList.remove("is-photo-returning"), { once: true });
+        }, 3000);
+      }, 550);
+    }
+
+    cancelPhotoLongPress(event) {
+      const tile = event?.target?.closest?.(".word-tile");
+      if (tile && this.photoLongPressTile && tile !== this.photoLongPressTile) return;
+      root.clearTimeout(this.photoLongPressTimer);
+      this.photoLongPressTimer = null;
+      this.photoLongPressTile = null;
     }
 
     deselectAll() {
@@ -1607,7 +1652,25 @@
         if (!/\s/gu.test(word) && word.length >= 8) tile.classList.add("word-tile--long");
         if (!/\s/gu.test(word) && word.length >= 11) tile.classList.add("word-tile--very-long");
         tile.dataset.word = word;
-        tile.textContent = word;
+        const photoFilename = this.photoFilenameFor(word);
+        if (photoFilename) {
+          tile.classList.add("word-tile--photo");
+          const inner = document.createElement("span");
+          inner.className = "word-tile-inner";
+          const front = document.createElement("span");
+          front.className = "word-tile-face word-tile-front";
+          front.textContent = word;
+          const back = document.createElement("span");
+          back.className = "word-tile-face word-tile-back";
+          const image = document.createElement("img");
+          image.src = photoFilename.startsWith("assets/") ? photoFilename : `assets/${photoFilename}`;
+          image.alt = "";
+          back.append(image);
+          inner.append(front, back);
+          tile.append(inner);
+        } else {
+          tile.textContent = word;
+        }
         tile.disabled = !canSelect;
         const selected = this.selectedWords.some((value) => normaliseWord(value) === normaliseWord(word));
         tile.setAttribute("aria-pressed", String(selected));
