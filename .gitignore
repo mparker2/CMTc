@@ -17,6 +17,9 @@ build/
 !.env.example
 .DS_Store
 
+# Personalised wedding messages; keep local until the event
+personalized-welcomes.js
+
 # Jupyter notebooks and generated checkpoint copies
 *.ipynb
 .ipynb_checkpoints/

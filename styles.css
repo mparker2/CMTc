@@ -262,7 +262,7 @@ input:focus-visible {
   justify-self: start;
   width: 160%;
   height: 160%;
-  top: -30%;
+  top: -40%;
   object-fit: contain;
   transform-origin: top left;
 }

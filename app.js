@@ -40,6 +40,29 @@
     return String(value ?? "").trim().replace(/\s+/gu, " ");
   }
 
+  function normaliseWelcomeMatch(value) {
+    return String(value ?? "")
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/gu, "")
+      .replace(/æ/giu, "ae")
+      .replace(/ß/giu, "ss")
+      .toLocaleLowerCase("en-GB")
+      .trim();
+  }
+
+  function personalizedWelcomeFor(teamName, messages = root.PERSONALIZED_WELCOMES) {
+    const candidate = normaliseWelcomeMatch(teamName);
+    if (!candidate || !Array.isArray(messages)) return null;
+
+    return messages
+      .filter((entry) => Number.isFinite(Number(entry?.precedence)) && String(entry?.message ?? "").trim())
+      .filter((entry) => Array.isArray(entry.matches) && entry.matches.some((match) => {
+        const fragment = normaliseWelcomeMatch(match);
+        return fragment && candidate.includes(fragment);
+      }))
+      .sort((left, right) => Number(left.precedence) - Number(right.precedence))[0] ?? null;
+  }
+
   function isTooVagueTeamName(value, config) {
     const normalised = normaliseTeamName(value).toLocaleLowerCase("en-GB");
     return (Array.isArray(config?.teamNameBlockedNames) ? config.teamNameBlockedNames : [])
@@ -1168,6 +1191,8 @@
       this.persist();
       this.showGame();
       this.render();
+      const personalizedWelcome = personalizedWelcomeFor(teamName);
+      if (personalizedWelcome) this.showBanner(personalizedWelcome.message, "notice");
     }
 
     addWord(event) {
