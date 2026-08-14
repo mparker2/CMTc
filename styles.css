@@ -214,7 +214,7 @@ input:focus-visible {
   transition: none;
 }
 
-.knotwork-band-bottom .knotwork-track img {
+.knotwork-band-top .knotwork-track img {
   transform: rotate(180deg);
 }
 
@@ -229,6 +229,10 @@ input:focus-visible {
 
 .knotwork-band-bottom.is-coasting {
   transition: none;
+}
+
+.knotwork-band.is-locked {
+  pointer-events: none;
 }
 
 .page-shell {

@@ -1056,8 +1056,8 @@
     }
 
     bindBorderDrag() {
-      this.bindBorderDragTo(this.nodes["top-border"], -1);
-      this.bindBorderDragTo(this.nodes["bottom-border"], 1);
+      this.bindBorderDragTo(this.nodes["top-border"], 1);
+      this.bindBorderDragTo(this.nodes["bottom-border"], -1);
     }
 
     bindBorderDragTo(border, dragDirection) {
@@ -1114,6 +1114,7 @@
         inertiaFrame = root.requestAnimationFrame(coast);
       };
       border.addEventListener("pointerdown", (event) => {
+        if (!this.engine) return;
         event.preventDefault();
         root.cancelAnimationFrame?.(inertiaFrame);
         inertiaFrame = null;
@@ -1761,11 +1762,15 @@
     showWelcome() {
       this.nodes["welcome-screen"].hidden = false;
       this.nodes["game-screen"].hidden = true;
+      this.nodes["top-border"]?.classList.add("is-locked");
+      this.nodes["bottom-border"]?.classList.add("is-locked");
     }
 
     showGame() {
       this.nodes["welcome-screen"].hidden = true;
       this.nodes["game-screen"].hidden = false;
+      this.nodes["top-border"]?.classList.remove("is-locked");
+      this.nodes["bottom-border"]?.classList.remove("is-locked");
     }
 
     setTeamMessage(message, tone = "") {
