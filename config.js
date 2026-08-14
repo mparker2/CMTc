@@ -25,6 +25,7 @@ const PUZZLE = {
     KOELSCH: "koelsch.jpg",
     MORE: "more.jpg",
     BLA: "bla.jpg",
+    RHEIN: "rhein.jpg",
   },
   bonusRound: {
     correctSurnames: ["Proctor", "Fleming", "Holland", "Hodgeson", "Parker"],
