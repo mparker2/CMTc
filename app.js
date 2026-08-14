@@ -19,7 +19,7 @@
     "correctGroup", "oneAway", "wrongGroup", "pointSingular", "pointPlural", "copySuccess",
     "copyFailure", "resetConfirmation", "resultSent", "resultSavedForRetry", "saveUnavailable",
     "fatalConfiguration", "shareTeam", "shareScore",
-    "bonusRoundTitle", "bonusRoundInstructions", "bonusRoundSubmit",
+    "personalizedWelcomeDefault", "bonusRoundTitle", "bonusRoundInstructions", "bonusRoundSubmit",
     "bonusRoundLivesAria", "bonusRoundSuccess", "bonusRoundFailure",
   ];
 
@@ -1192,7 +1192,8 @@
       this.showGame();
       this.render();
       const personalizedWelcome = personalizedWelcomeFor(teamName);
-      if (personalizedWelcome) this.showBanner(personalizedWelcome.message, "notice");
+      const welcomeMessage = personalizedWelcome?.message ?? this.getText("personalizedWelcomeDefault");
+      this.showBanner(formatText(welcomeMessage, { teamname: teamName }), "notice");
     }
 
     addWord(event) {
