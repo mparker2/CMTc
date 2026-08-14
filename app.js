@@ -1107,6 +1107,10 @@
         if (!dragging) return;
         dragging = false;
         border.classList.remove("is-dragging");
+        if (this.engine?.state.mapUnlocked) {
+          velocity = 0;
+          return;
+        }
         if (Math.abs(velocity) < 0.02) return;
 
         border.classList.add("is-coasting");
@@ -1128,7 +1132,7 @@
         inertiaFrame = root.requestAnimationFrame(coast);
       };
       border.addEventListener("pointerdown", (event) => {
-        if (!this.engine) return;
+        if (!this.engine || this.engine.state.mapUnlocked) return;
         event.preventDefault();
         root.cancelAnimationFrame?.(inertiaFrame);
         inertiaFrame = null;
@@ -1142,7 +1146,7 @@
         border.setPointerCapture?.(event.pointerId);
       });
       border.addEventListener("pointermove", (event) => {
-        if (!dragging) return;
+        if (!dragging || this.engine?.state.mapUnlocked) return;
         const now = performance.now();
         const deltaTime = Math.max(1, now - lastMoveAt);
         const deltaX = event.clientX - lastX;
@@ -1170,6 +1174,8 @@
       };
       if (this.engine.state.borderEndpointsFound.top && this.engine.state.borderEndpointsFound.bottom) {
         this.engine.state.mapUnlocked = true;
+        this.nodes["top-border"]?.classList.add("is-endpoint-locked");
+        this.nodes["bottom-border"]?.classList.add("is-endpoint-locked");
       }
       this.persist();
       this.render();
@@ -1843,15 +1849,35 @@
     showWelcome() {
       this.nodes["welcome-screen"].hidden = false;
       this.nodes["game-screen"].hidden = true;
+      this.restoreBorderEndpointPositions(false);
       this.nodes["top-border"]?.classList.add("is-locked");
       this.nodes["bottom-border"]?.classList.add("is-locked");
+      this.nodes["top-border"]?.classList.remove("is-endpoint-locked");
+      this.nodes["bottom-border"]?.classList.remove("is-endpoint-locked");
     }
 
     showGame() {
       this.nodes["welcome-screen"].hidden = true;
       this.nodes["game-screen"].hidden = false;
+      this.restoreBorderEndpointPositions(Boolean(this.engine?.state.mapUnlocked));
       this.nodes["top-border"]?.classList.remove("is-locked");
       this.nodes["bottom-border"]?.classList.remove("is-locked");
+      this.nodes["top-border"]?.classList.toggle("is-endpoint-locked", Boolean(this.engine?.state.mapUnlocked));
+      this.nodes["bottom-border"]?.classList.toggle("is-endpoint-locked", Boolean(this.engine?.state.mapUnlocked));
+    }
+
+    restoreBorderEndpointPositions(locked) {
+      const borders = [
+        [this.nodes["top-border"], 1],
+        [this.nodes["bottom-border"], -1],
+      ];
+      for (const [border, direction] of borders) {
+        if (!border) continue;
+        const limit = Math.max(border.clientHeight * (2048 / 199), 1) * 3;
+        const offset = locked ? limit : 0;
+        border.style.setProperty("--border-drag-x", `${offset}px`);
+        border.style.setProperty("--border-track-translate", `${offset * direction}px`);
+      }
     }
 
     setTeamMessage(message, tone = "") {

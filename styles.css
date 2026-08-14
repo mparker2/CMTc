@@ -236,6 +236,11 @@ input:focus-visible {
   pointer-events: none;
 }
 
+.knotwork-band.is-endpoint-locked {
+  pointer-events: none;
+  cursor: default;
+}
+
 .page-shell {
   width: min(100%, 46rem);
   flex: 1 0 auto;
