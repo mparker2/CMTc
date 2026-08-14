@@ -20,7 +20,7 @@
     "copyFailure", "resetConfirmation", "resultSent", "resultSavedForRetry", "saveUnavailable",
     "fatalConfiguration", "shareTeam", "shareScore",
     "personalizedWelcomeDefault", "bonusRoundTitle", "bonusRoundInstructions", "bonusRoundSubmit",
-    "bonusRoundLivesAria", "bonusRoundSuccess", "bonusRoundFailure",
+    "bonusRoundLivesAria", "bonusRoundLastLifeHint", "bonusRoundSuccess", "bonusRoundFailure",
   ];
 
   function normaliseWord(value) {
@@ -751,7 +751,8 @@
         "solve-order-heading", "solve-order", "guesses-heading", "guess-history", "copy-result", "copy-status",
         "fatal-error",
         "wheel-trigger", "bonus-dialog", "close-bonus", "bonus-title", "bonus-instructions",
-        "bonus-lives", "bonus-grid", "bonus-submit", "bonus-feedback",
+        "bonus-lives", "bonus-hint", "bonus-grid", "bonus-submit", "bonus-feedback",
+        "top-border", "bottom-border",
       ];
       for (const id of ids) this.nodes[id] = document.getElementById(id);
     }
@@ -814,6 +815,7 @@
       this.nodes["bonus-title"].textContent = this.getText("bonusRoundTitle");
       this.nodes["bonus-instructions"].textContent = this.getText("bonusRoundInstructions");
       this.nodes["bonus-submit"].textContent = this.getText("bonusRoundSubmit");
+      this.nodes["bonus-hint"].textContent = this.getText("bonusRoundLastLifeHint");
     }
 
     fitWelcomeTitle() {
@@ -910,6 +912,7 @@
       this.nodes["bonus-submit"].addEventListener("click", () => this.submitBonusRound());
       this.nodes["close-bonus"].addEventListener("click", () => this.closeBonusRound());
       this.bindWheelHold();
+      this.bindBorderDrag();
       root.addEventListener("online", () => this.submitCompletedResult(true));
       root.addEventListener("storage", (event) => this.syncSubmissionState(event));
       root.visualViewport?.addEventListener?.("resize", this.syncBannerViewport);
@@ -1052,6 +1055,95 @@
       root.setTimeout(() => wheel.classList.remove("is-entering"), 2000);
     }
 
+    bindBorderDrag() {
+      this.bindBorderDragTo(this.nodes["top-border"], -1);
+      this.bindBorderDragTo(this.nodes["bottom-border"], 1);
+    }
+
+    bindBorderDragTo(border, dragDirection) {
+      if (!border) return;
+      let dragging = false;
+      let lastX = 0;
+      let offset = 0;
+      let lastMoveAt = 0;
+      let velocity = 0;
+      let inertiaFrame = null;
+
+      const tileWidth = () => Math.max(border.clientHeight * (2048 / 199), 1);
+      const maximumOffset = () => {
+        const width = tileWidth();
+        border.style.setProperty("--border-tile-width", `${width}px`);
+        const endWidth = border.clientHeight * (1740 / 199);
+        border.style.setProperty("--border-end-width", `${endWidth}px`);
+        const motifPosition = dragDirection === 1 ? 0.59 : 0.41;
+        border.style.setProperty("--border-end-motif-offset", `${endWidth * motifPosition}px`);
+        border.style.setProperty("--border-end-travel", `${width * 3}px`);
+        const initialOffset = dragDirection === 1
+          ? (width * 3) + (endWidth * 0.59)
+          : (width * 2) + (endWidth * 0.41);
+        border.style.setProperty("--border-track-initial-offset", `${initialOffset}px`);
+        return width * 3;
+      };
+      maximumOffset();
+      const applyOffset = () => {
+        border.style.setProperty("--border-drag-x", `${offset}px`);
+        border.style.setProperty("--border-track-translate", `${offset * dragDirection}px`);
+      };
+      const stop = () => {
+        if (!dragging) return;
+        dragging = false;
+        border.classList.remove("is-dragging");
+        if (Math.abs(velocity) < 0.02) return;
+
+        border.classList.add("is-coasting");
+        let previousFrameAt = performance.now();
+        const coast = (now) => {
+          const deltaTime = Math.min(40, now - previousFrameAt);
+          previousFrameAt = now;
+          const limit = maximumOffset();
+          offset = Math.min(limit, Math.max(0, offset + velocity * deltaTime));
+          applyOffset();
+          if (offset <= 0 || offset >= limit) velocity = 0;
+          velocity *= Math.pow(0.9, deltaTime / 16);
+          if (Math.abs(velocity) >= 0.02) inertiaFrame = root.requestAnimationFrame(coast);
+          else {
+            inertiaFrame = null;
+            border.classList.remove("is-coasting");
+          }
+        };
+        inertiaFrame = root.requestAnimationFrame(coast);
+      };
+      border.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        root.cancelAnimationFrame?.(inertiaFrame);
+        inertiaFrame = null;
+        border.classList.remove("is-coasting");
+        dragging = true;
+        lastX = event.clientX;
+        lastMoveAt = performance.now();
+        velocity = 0;
+        maximumOffset();
+        border.classList.add("is-dragging");
+        border.setPointerCapture?.(event.pointerId);
+      });
+      border.addEventListener("pointermove", (event) => {
+        if (!dragging) return;
+        const now = performance.now();
+        const deltaTime = Math.max(1, now - lastMoveAt);
+        const deltaX = event.clientX - lastX;
+        const limit = maximumOffset();
+        offset = Math.min(limit, Math.max(0, offset + ((event.clientX - lastX) * dragDirection)));
+        lastX = event.clientX;
+        lastMoveAt = now;
+        velocity = (deltaX * dragDirection) / deltaTime;
+        applyOffset();
+      });
+      border.addEventListener("pointerup", stop);
+      border.addEventListener("pointercancel", stop);
+      border.addEventListener("lostpointercapture", stop);
+      border.addEventListener("contextmenu", (event) => event.preventDefault());
+    }
+
     openBonusRound() {
       if (!this.engine || this.engine.state.bonusRoundCompleted) return;
       this.bonusSelectedSurnames = new Set();
@@ -1122,6 +1214,7 @@
       const lives = Math.max(0, this.bonusLives ?? 3);
       this.nodes["bonus-lives"].textContent = "♥".repeat(lives) + "♡".repeat(3 - lives);
       this.nodes["bonus-lives"].setAttribute("aria-label", this.getText("bonusRoundLivesAria", { count: lives }));
+      this.nodes["bonus-hint"].hidden = lives !== 1;
       this.nodes["bonus-submit"].disabled = this.bonusSelectedSurnames.size === 0;
     }
 

@@ -172,18 +172,63 @@ input:focus-visible {
   pointer-events: none;
 }
 
+.knotwork-track {
+  position: absolute;
+  top: 0;
+  left: calc(50% - var(--border-track-initial-offset, 0px));
+  display: flex;
+  width: max-content;
+  height: 100%;
+  align-items: stretch;
+  pointer-events: none;
+  transform: translateX(var(--border-track-translate, 0px));
+  will-change: transform;
+}
+
 .knotwork-band img {
   display: block;
-  width: min(100%, 80rem);
-  height: auto;
-  max-height: 100%;
-  object-fit: contain;
-  object-position: center;
+  width: auto;
+  height: 100%;
+  flex: 0 0 auto;
+  max-width: none;
+  object-fit: fill;
 }
 
 .knotwork-band-bottom {
   align-items: flex-end;
   transform: translateY(-0.35rem);
+  cursor: default;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  transition: none;
+}
+
+.knotwork-band-top {
+  cursor: default;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  transition: none;
+}
+
+.knotwork-band-bottom .knotwork-track img {
+  transform: rotate(180deg);
+}
+
+.knotwork-band-bottom.is-dragging {
+  transition: none;
+}
+
+.knotwork-band-top.is-dragging,
+.knotwork-band-top.is-coasting {
+  transition: none;
+}
+
+.knotwork-band-bottom.is-coasting {
+  transition: none;
 }
 
 .page-shell {
@@ -1018,11 +1063,32 @@ input:disabled {
 }
 
 .bonus-lives {
-  margin: 0.7rem 0 0;
+  margin: 0;
   color: #2f6654;
   font-size: 1.45rem;
   letter-spacing: 0.2em;
   line-height: 1;
+}
+
+.bonus-status {
+  display: flex;
+  min-height: 2.8rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0.7rem 0 0;
+}
+
+.bonus-lives {
+  order: 1;
+}
+
+.bonus-hint {
+  color: var(--accent-dark);
+  font-size: 0.76rem;
+  font-style: italic;
+  order: 2;
+  text-align: center;
 }
 
 .bonus-grid {

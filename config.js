@@ -82,6 +82,7 @@ const PUZZLE = {
     bonusRoundInstructions: "There are a lot of Matts at this wedding...\nCan you find them all?",
     bonusRoundSubmit: "Submit answers",
     bonusRoundLivesAria: "Lives remaining: {count}",
+    bonusRoundLastLifeHint: "hint: there are five",
     bonusRoundSuccess: "Correct! {points} points added.",
     bonusRoundFailure: "No extra points for you...",
 
