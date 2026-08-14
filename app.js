@@ -1478,7 +1478,7 @@
       const input = this.nodes["word-input"].value;
       this.nodes["word-input"].value = "";
 
-      if (input.trim() === "!#TRIGGER_REVEAL") {
+      if (input.trim() === "#!TRIGGER_REVEAL") {
         this.engine.state.cheatUsed = true;
         this.engine.state.wordRevealOffered = true;
         this.persist();
