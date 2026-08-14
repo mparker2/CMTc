@@ -1216,6 +1216,7 @@
       this.nodes["map-title"].hidden = !showTitle;
       dialog.hidden = false;
       this.lockPageScroll();
+      this.lockMapOrientation();
       this.fitMapImage();
       this.nodes["close-map"].focus({ preventScroll: true });
     }
@@ -1250,9 +1251,28 @@
       const dialog = this.nodes["map-dialog"];
       if (!dialog || dialog.hidden) return;
       dialog.hidden = true;
+      this.unlockMapOrientation();
       this.unlockPageScroll();
       if (this.engine && !this.nodes["open-map"].hidden) {
         this.nodes["open-map"].focus({ preventScroll: true });
+      }
+    }
+
+    lockMapOrientation() {
+      const orientation = root.screen?.orientation;
+      if (!orientation?.lock || !orientation.type) return;
+      orientation.lock(orientation.type).catch(() => {
+        // Orientation locking is restricted in some browser contexts.
+      });
+    }
+
+    unlockMapOrientation() {
+      const orientation = root.screen?.orientation;
+      if (!orientation?.unlock) return;
+      try {
+        orientation.unlock();
+      } catch (_error) {
+        // Ignore browsers that expose unlock but reject the current context.
       }
     }
 
