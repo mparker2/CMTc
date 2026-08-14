@@ -116,6 +116,7 @@
           <footer class="game-footer">
             <button id="reset-game" class="text-button muted" type="button"></button>
             <button id="open-map" class="text-button" type="button" hidden></button>
+            <button id="reveal-words-link" class="text-button" type="button" hidden></button>
             <span id="result-separator" class="result-separator" aria-hidden="true" hidden>.</span>
             <button id="view-result" class="text-button" type="button" hidden></button>
           </footer>
@@ -187,6 +188,18 @@
         </div>
       </div>
     </div>
+
+    <dialog id="word-reveal-dialog" class="completion-dialog word-reveal-dialog" aria-labelledby="word-reveal-title">
+      <div class="completion-panel word-reveal-panel">
+        <button id="close-word-reveal" class="dialog-close" type="button">×</button>
+        <h2 id="word-reveal-title"></h2>
+        <p id="word-reveal-message" class="word-reveal-message"></p>
+        <div class="word-reveal-actions">
+          <button id="reveal-words" class="button button-primary" type="button"></button>
+          <button id="keep-solving" class="text-button" type="button"></button>
+        </div>
+      </div>
+    </dialog>
 
     <div id="fatal-error" class="fatal-error" role="alert" hidden></div>
 

@@ -821,6 +821,8 @@ input:disabled {
 
 .word-tile-back img {
   display: block;
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   border-radius: inherit;
@@ -841,6 +843,10 @@ input:disabled {
 }
 
 .word-tile:hover:not(:disabled):not([aria-pressed="true"]) {
+  background: var(--tile-hover);
+}
+
+.word-tile--photo:hover:not(:disabled):not([aria-pressed="true"]) .word-tile-front {
   background: var(--tile-hover);
 }
 
@@ -991,6 +997,31 @@ input:disabled {
   justify-content: center;
   place-items: center;
   overflow: hidden;
+}
+
+.word-reveal-panel {
+  width: min(100%, 30rem);
+}
+
+.word-reveal-panel h2 {
+  margin-bottom: 0.75rem;
+}
+
+.word-reveal-message {
+  max-width: 25rem;
+  margin: 0 auto 1.1rem;
+  color: var(--ink-soft);
+  line-height: 1.45;
+  text-align: center;
+}
+
+.word-reveal-actions {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.word-reveal-actions .button {
+  width: 100%;
 }
 
 .result-separator {

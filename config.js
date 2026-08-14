@@ -6,8 +6,10 @@ const RESULTS_ENDPOINT = "https://script.google.com/macros/s/AKfycbw1e3tvBYCU8og
 // necessarily ships to the browser so the game can decode the puzzle locally.
 const PUZZLE_ENCRYPTION_KEY = "CMT-2026";
 const PUZZLE_CATEGORIES_BLOB = "GDZ2WVtEXlNhd3ZuU11QRCopM0gSfUdFJjg5DV1WEmImLjwDElxdVSI5PUJcQxAaYS47QV1FQBR5by1IXlxdQWFhdlpdQlZFYXcPD3NjehRvbxZhc3N5ZRcCGmgQHBBmGgh2ARBmc3oVCHZwTxxJFDckIEFXEggUFCwgSEBHU08wbSNFV0JXFjQodEVTRlcWLyQiSFYSHhQgIjhCR0IQDGEqJkhXXhAaYTo7X1ZDEAwYbxbutnN6egZveA9geHd/DW94D351e2ILb3gPYXh3dwVvCVAeSxBCKjk4SBAKEHQmI3tvWlVbWC1tGVhcQl1FYzoxDVpRRFNjLzVKVVVWFG9vN0JeX0dEYXd2T15FVxRvbyNCQFRBFHkWdmB9YncUb28WYXMSHhQPAhlifHQQGmEKHGFzYxBrPmEvD0ZZRlomb24Pd15VWio+PAJhU11CNyQnRR13V0QuLDoNUFVXRDBveA9RX15ZNj92FxBAR0QzITEPHhJFWTEpJw8IaxBmDB8AaGASHhQCAQAPHhJ59dUBB256Eh4UCwgVe2sSb0se";
+const PUZZLE_PHOTO_CLUES_BLOB = "OG8fYnd8YXULb24PWllWUiYjC11aX0ZZcmM+XVUSHhQOAgZoEAoQXiopMEhcb0JeLDk7HxxaQlFhYXZvfnEQDGElPUlWVVxpMyU7WV0DHFwzKnYBEGJ6cwoDdhcQWFtSJyg6ckJYXUIseXpHQlcQGmEPFWhxeH5zYXd2RVtUVlMtEiRFXURdA20nJEoQHBBlCwgVaxAKEF4qKTBIXG9CXiw5OxscWkJRYWF2fX1iZnMRb24PWllWUiYjC11aX0ZZdGM+XVUSHhQBARVueWNmeQ0IdhcQWFtSJyg6ckJYXUIsdXpHQlcQSw==";
+const PUZZLE_BONUS_ROUND_BLOB = "OG83QkBCV1U3HiFfXFFfUzBvbnYQYEBZIDk7XxAcEHAvKDlEXFcQGmEFO0FeUVxSYWF2ZV1UVUUsI3YBEGBTRCgoJg9vHBBfLS47X0BVUUIQOCZDU11XRWF3Dw92VVxCYWF2flpRRRRvbxNCXVRWT2FhdmlTRltFYWF2eltcXl8wb3gPf1VXXiIjdgEQdVZTOm94D3ZRVlk2Pz1MXBIeFAcoOExcVUsUb28YSEFSW0QmIXYBEHRdWCRveA9hUV9BIiEwDx4SdEQmODBEVV1TWC1veA9hU1pYJig2SEBXV0RhYXZ5WlFRXSY/LQ8eEn9XKCwmDx4ScFcqITFUEBwQdSw/N0JAUVwUb28HWfGWWkRhECk=";
 
-function decodePuzzleCategories(blob, key) {
+function decodePuzzleBlob(blob, key) {
   const binary = globalThis.atob(blob);
   const encrypted = Uint8Array.from(binary, (character) => character.charCodeAt(0));
   const keyBytes = new TextEncoder().encode(key);
@@ -18,18 +20,11 @@ function decodePuzzleCategories(blob, key) {
 const PUZZLE = {
   storageKey: "cmt-connections-game-v2",
   title: "CMT Connections",
+  revealWordsAfter: "2026-09-12T17:30:00+01:00",
   teamNameBlockedNames: ["Matt", "Matty", "Matthew", "Matt P.", "Matt P", "MattP", "MattP.", "Matty P.", "Matty P", "MattyP", "MattyP.", "Matthew P.", "Matthew P", "MatthewP.", "MatthewP"],
-  // Optional long-press photo clues. Keys are puzzle words; values are
-  // filenames within assets/.
-  photoClues: {
-    KOELSCH: "koelsch.jpg",
-    MORE: "more.jpg",
-    BLA: "bla.jpg",
-    RHEIN: "rhein.jpg",
-  },
+  photoClues: decodePuzzleBlob(PUZZLE_PHOTO_CLUES_BLOB, PUZZLE_ENCRYPTION_KEY),
   bonusRound: {
-    correctSurnames: ["Proctor", "Fleming", "Holland", "Hodgeson", "Parker"],
-    incorrectSurnames: ["Dent", "Shaw", "Gooddy", "Davis", "Willis", "Meehan", "Edey", "Dadourian", "Delaney", "Lesbirel", "Dong", "Samwald", "Freudigmann", "Schneeberger", "Thackery", "Makar", "Bailey", "Corcoran", "Stæhr"],
+    ...decodePuzzleBlob(PUZZLE_BONUS_ROUND_BLOB, PUZZLE_ENCRYPTION_KEY),
     points: 50,
   },
 
@@ -78,6 +73,11 @@ const PUZZLE = {
     openMapButton: "Open map",
     mapTitle: "CMT map unlocked",
     closeMapAria: "Close map",
+    revealWordsTitle: "Would you like a hand?",
+    revealWordsMessage: "The words can now be revealed if you would like to keep playing.",
+    revealWordsButton: "Reveal words",
+    keepSolvingButton: "Keep searching",
+    closeRevealWordsAria: "Close word reveal",
     completionKicker: "All connections found",
     completionTitle: "Congratulations!",
     pointsLabel: "points",
@@ -95,6 +95,7 @@ const PUZZLE = {
     bonusRoundLivesAria: "Lives remaining: {count}",
     bonusRoundLastLifeHint: "hint: there are five",
     bonusRoundSuccess: "Correct! {points} points added.",
+    bonusRoundSuccessNoPoints: "Correct!",
     bonusRoundFailure: "No extra points for you...",
 
     teamNameRequired: "Enter a team name to begin.",
@@ -133,7 +134,7 @@ const PUZZLE = {
     shareScore: "Score: {score}",
   },
 
-  categories: decodePuzzleCategories(PUZZLE_CATEGORIES_BLOB, PUZZLE_ENCRYPTION_KEY),
+  categories: decodePuzzleBlob(PUZZLE_CATEGORIES_BLOB, PUZZLE_ENCRYPTION_KEY),
 
   palette: {
     yellow: { background: "#F1E1A6", foreground: "#3D351A", emoji: "🟨", label: "yellow" },

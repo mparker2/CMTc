@@ -18,9 +18,10 @@
     "wordAdded", "findMoreWords", "maxSelection", "selectionCleared", "wordsShuffled", "invalidGuess",
     "correctGroup", "oneAway", "wrongGroup", "pointSingular", "pointPlural", "copySuccess",
     "copyFailure", "resetConfirmation", "resultSent", "resultSavedForRetry", "saveUnavailable",
-    "fatalConfiguration", "shareTeam", "shareScore",
+    "fatalConfiguration", "shareTeam", "shareScore", "revealWordsTitle", "revealWordsMessage", "revealWordsButton",
+    "keepSolvingButton", "closeRevealWordsAria",
     "personalizedWelcomeDefault", "bonusRoundTitle", "bonusRoundInstructions", "bonusRoundSubmit",
-    "bonusRoundLivesAria", "bonusRoundLastLifeHint", "bonusRoundSuccess", "bonusRoundFailure",
+    "bonusRoundLivesAria", "bonusRoundLastLifeHint", "bonusRoundSuccess", "bonusRoundSuccessNoPoints", "bonusRoundFailure",
   ];
 
   function normaliseWord(value) {
@@ -287,6 +288,7 @@
       bonusRoundCompleted: false,
       bonusRoundLives: 3,
       bonusRoundSurnames: null,
+      wordRevealOffered: false,
       borderEndpointsFound: { top: false, bottom: false },
       mapUnlocked: false,
       resultSubmitted: false,
@@ -500,6 +502,7 @@
       bonusRoundCompleted: Boolean(rawState.bonusRoundCompleted),
       bonusRoundLives: Math.max(0, Math.min(3, Number.isFinite(Number(rawState.bonusRoundLives)) ? Number(rawState.bonusRoundLives) : 3)),
       bonusRoundSurnames: storedBonusSurnames,
+      wordRevealOffered: Boolean(rawState.wordRevealOffered),
       borderEndpointsFound: {
         top: Boolean(rawState.borderEndpointsFound?.top),
         bottom: Boolean(rawState.borderEndpointsFound?.bottom),
@@ -581,6 +584,22 @@
       }
 
       return { added };
+    }
+
+    revealAllWords() {
+      if (this.state.complete) return [];
+      const entered = new Set(this.state.enteredWords.map(normaliseWord));
+      const added = [];
+      for (const entry of shuffleArray([...wordEntries(this.config)], this.random)) {
+        if (entered.has(entry.normalised)) continue;
+        const slot = this.state.gridSlots.indexOf(null);
+        if (slot < 0) break;
+        this.state.enteredWords.push(entry.canonical);
+        this.state.gridSlots[slot] = entry.canonical;
+        entered.add(entry.normalised);
+        added.push(entry.canonical);
+      }
+      return added;
     }
 
     shuffle() {
@@ -707,6 +726,7 @@
       this.scrollLock = null;
       this.bannerTimer = null;
       this.guessUnlockTimer = null;
+      this.wordRevealTimer = null;
       this.nodes = {};
       this.syncBannerViewport = this.syncBannerViewport.bind(this);
       this.fitWelcomeTitle = this.fitWelcomeTitle.bind(this);
@@ -759,7 +779,8 @@
         "fatal-error",
         "wheel-trigger", "bonus-dialog", "close-bonus", "bonus-title", "bonus-instructions",
         "bonus-lives", "bonus-hint", "bonus-grid", "bonus-submit", "bonus-feedback",
-        "top-border", "bottom-border", "map-dialog", "close-map", "map-title", "map-image-frame", "map-image", "open-map",
+        "top-border", "bottom-border", "map-dialog", "close-map", "map-title", "map-image-frame", "map-image", "open-map", "reveal-words-link",
+        "word-reveal-dialog", "close-word-reveal", "word-reveal-title", "word-reveal-message", "reveal-words", "keep-solving",
       ];
       for (const id of ids) this.nodes[id] = document.getElementById(id);
     }
@@ -811,8 +832,14 @@
       this.nodes.shuffle.textContent = this.getText("shuffleButton");
       this.nodes["reset-game"].textContent = this.getText("resetButton");
       this.nodes["open-map"].textContent = this.getText("openMapButton");
+      this.nodes["reveal-words-link"].textContent = this.getText("revealWordsButton");
       this.nodes["map-title"].textContent = this.getText("mapTitle");
       this.nodes["close-map"].setAttribute("aria-label", this.getText("closeMapAria"));
+      this.nodes["word-reveal-title"].textContent = this.getText("revealWordsTitle");
+      this.nodes["word-reveal-message"].textContent = this.getText("revealWordsMessage");
+      this.nodes["reveal-words"].textContent = this.getText("revealWordsButton");
+      this.nodes["keep-solving"].textContent = this.getText("keepSolvingButton");
+      this.nodes["close-word-reveal"].setAttribute("aria-label", this.getText("closeRevealWordsAria"));
       this.nodes["close-completion"].setAttribute("aria-label", this.getText("closeResultsAria"));
       this.nodes["completion-kicker"].textContent = this.getText("completionKicker");
       this.nodes["completion-title"].textContent = this.getText("completionTitle");
@@ -921,6 +948,7 @@
       this.nodes.shuffle.addEventListener("click", () => this.shuffle());
       this.nodes["reset-game"].addEventListener("click", () => this.resetGame());
       this.nodes["open-map"].addEventListener("click", () => this.openMap(false));
+      this.nodes["reveal-words-link"].addEventListener("click", () => this.revealWords());
       this.nodes["view-result"].addEventListener("click", () => this.openCompletion());
       this.nodes["close-completion"].addEventListener("click", () => this.closeCompletion());
       this.nodes["copy-result"].addEventListener("click", () => this.copyResult());
@@ -928,6 +956,9 @@
       this.nodes["bonus-submit"].addEventListener("click", () => this.submitBonusRound());
       this.nodes["close-bonus"].addEventListener("click", () => this.closeBonusRound());
       this.nodes["close-map"].addEventListener("click", () => this.closeMap());
+      this.nodes["close-word-reveal"].addEventListener("click", () => this.closeWordReveal());
+      this.nodes["keep-solving"].addEventListener("click", () => this.closeWordReveal());
+      this.nodes["reveal-words"].addEventListener("click", () => this.revealWords());
       this.bindWheelHold();
       this.bindBorderDrag();
       root.addEventListener("online", () => this.submitCompletedResult(true));
@@ -1049,7 +1080,7 @@
         spinFrame = root.requestAnimationFrame(animateSpin);
       };
       const start = (event) => {
-        if (!this.engine || this.engine.state.complete || this.engine.state.bonusRoundCompleted || holdStartedAt) return;
+        if (!this.engine || this.engine.state.bonusRoundCompleted || holdStartedAt) return;
         event.preventDefault();
         wheel.classList.remove("is-entering");
         root.cancelAnimationFrame?.(cooldownFrame);
@@ -1343,19 +1374,27 @@
       const correct = this.bonusSelectedSurnames.size === answers.size
         && [...this.bonusSelectedSurnames].every((surname) => answers.has(surname));
       if (correct) {
-        this.engine.state.score += Number(this.config.bonusRound.points);
+        const awardPoints = !this.engine.state.complete;
+        if (awardPoints) this.engine.state.score += Number(this.config.bonusRound.points);
         this.engine.state.bonusRoundCompleted = true;
-        this.deferBonusGold = true;
+        this.deferBonusGold = awardPoints;
         this.persist();
         this.render();
         this.closeBonusRound();
-        this.animateBonusScore();
-        root.clearTimeout(this.bonusGoldTimer);
-        this.bonusGoldTimer = root.setTimeout(() => {
-          this.deferBonusGold = false;
-          this.renderScore();
-        }, 150);
-        this.showBanner(this.getText("bonusRoundSuccess", { points: this.config.bonusRound.points }), "success");
+        if (awardPoints) {
+          this.animateBonusScore();
+          root.clearTimeout(this.bonusGoldTimer);
+          this.bonusGoldTimer = root.setTimeout(() => {
+            this.deferBonusGold = false;
+            this.renderScore();
+          }, 150);
+        }
+        this.showBanner(
+          this.getText(awardPoints ? "bonusRoundSuccess" : "bonusRoundSuccessNoPoints", {
+            points: this.config.bonusRound.points,
+          }),
+          "success",
+        );
         return;
       }
 
@@ -1389,7 +1428,12 @@
         return;
       }
 
-      this.engine = PuzzleEngine.newGame(this.config, teamName, isoTimestamp());
+      const startTimestamp = isoTimestamp();
+      this.engine = PuzzleEngine.newGame(this.config, teamName, startTimestamp);
+      if (this.isAfterWordRevealTime(startTimestamp)) {
+        this.engine.revealAllWords();
+        this.engine.state.wordRevealOffered = true;
+      }
       this.selectedWords = [];
       this.persist();
       this.showGame();
@@ -1404,6 +1448,15 @@
       if (!this.engine || this.engine.state.complete) return;
       const input = this.nodes["word-input"].value;
       this.nodes["word-input"].value = "";
+
+      if (input.trim() === "!#TRIGGER_REVEAL") {
+        this.engine.state.cheatUsed = true;
+        this.engine.state.wordRevealOffered = true;
+        this.persist();
+        this.render();
+        this.openWordRevealDialog();
+        return;
+      }
 
       if (input.startsWith("#!CHEAT:")) {
         this.engine.state.cheatUsed = true;
@@ -1580,6 +1633,9 @@
       this.nodes["view-result"].hidden = !state.complete;
       this.nodes["result-separator"].hidden = !state.complete;
       this.nodes["open-map"].hidden = !state.mapUnlocked;
+      this.nodes["reveal-words-link"].hidden = state.complete
+        || !state.wordRevealOffered
+        || state.enteredWords.length >= wordEntries(this.config).length;
       this.renderScore();
       this.renderResolvedGroups();
       this.renderGrid();
@@ -1835,6 +1891,7 @@
       this.closeCompletionIfOpen();
       this.closeBonusRound();
       this.closeMap();
+      this.closeWordReveal();
       this.nodes["team-name"].value = "";
       this.nodes["word-feedback"].textContent = "";
       this.nodes["submission-status"].textContent = "";
@@ -1930,6 +1987,8 @@
     }
 
     showWelcome() {
+      root.clearTimeout(this.wordRevealTimer);
+      this.wordRevealTimer = null;
       this.nodes["welcome-screen"].hidden = false;
       this.nodes["game-screen"].hidden = true;
       this.restoreBorderEndpointPositions(false);
@@ -1947,6 +2006,64 @@
       this.nodes["bottom-border"]?.classList.remove("is-locked");
       this.nodes["top-border"]?.classList.toggle("is-endpoint-locked", Boolean(this.engine?.state.mapUnlocked));
       this.nodes["bottom-border"]?.classList.toggle("is-endpoint-locked", Boolean(this.engine?.state.mapUnlocked));
+      this.scheduleWordReveal();
+    }
+
+    isAfterWordRevealTime(timestamp = isoTimestamp()) {
+      const revealAt = Date.parse(this.config.revealWordsAfter);
+      const current = Date.parse(timestamp);
+      return Number.isFinite(revealAt) && Number.isFinite(current) && current >= revealAt;
+    }
+
+    scheduleWordReveal() {
+      root.clearTimeout(this.wordRevealTimer);
+      this.wordRevealTimer = null;
+      if (!this.engine || this.engine.state.complete || this.engine.state.wordRevealOffered) return;
+      const revealAt = Date.parse(this.config.revealWordsAfter);
+      if (!Number.isFinite(revealAt)) return;
+      const delay = revealAt - Date.now();
+      const safeDelay = Math.min(Math.max(0, delay), 24 * 60 * 60 * 1000);
+      this.wordRevealTimer = root.setTimeout(() => {
+        if (Date.now() >= revealAt) this.offerWordReveal();
+        else this.scheduleWordReveal();
+      }, safeDelay);
+    }
+
+    offerWordReveal() {
+      this.wordRevealTimer = null;
+      if (!this.engine || this.engine.state.complete || this.engine.state.wordRevealOffered) return;
+      if (this.engine.state.enteredWords.length >= wordEntries(this.config).length) return;
+      this.engine.state.wordRevealOffered = true;
+      this.persist();
+      this.render();
+      this.openWordRevealDialog();
+    }
+
+    openWordRevealDialog() {
+      if (!this.engine || this.engine.state.complete) return;
+      const dialog = this.nodes["word-reveal-dialog"];
+      if (dialog.open || this.engine.state.enteredWords.length >= wordEntries(this.config).length) return;
+      if (typeof dialog.showModal === "function") dialog.showModal();
+      else dialog.setAttribute("open", "");
+      this.lockPageScroll();
+      this.nodes["keep-solving"].focus({ preventScroll: true });
+    }
+
+    closeWordReveal() {
+      const dialog = this.nodes["word-reveal-dialog"];
+      if (!dialog.open) return;
+      if (typeof dialog.close === "function") dialog.close();
+      else dialog.removeAttribute("open");
+      this.unlockPageScroll();
+      if (this.engine) this.nodes["word-input"].focus({ preventScroll: true });
+    }
+
+    revealWords() {
+      if (!this.engine || this.engine.state.complete) return;
+      this.engine.revealAllWords();
+      this.persist();
+      this.render();
+      this.closeWordReveal();
     }
 
     restoreBorderEndpointPositions(locked) {
