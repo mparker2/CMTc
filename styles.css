@@ -353,6 +353,18 @@ input:focus-visible {
   to { transform: rotate(360deg); }
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .brand-mark.is-reward-spinning img {
+    animation: wheel-reward-spin 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+    transform-origin: center;
+  }
+}
+
+@keyframes wheel-reward-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .eyebrow,
 .section-kicker {
   margin: 0 0 0.18rem;

@@ -1155,12 +1155,12 @@
         border.style.setProperty("--border-end-width", `${endWidth}px`);
         const motifPosition = dragDirection === 1 ? 0.59 : 0.41;
         border.style.setProperty("--border-end-motif-offset", `${endWidth * motifPosition}px`);
-        border.style.setProperty("--border-end-travel", `${width * 3}px`);
+        border.style.setProperty("--border-end-travel", `${width}px`);
         const initialOffset = dragDirection === 1
-          ? (width * 3) + (endWidth * 0.59)
-          : (width * 2) + (endWidth * 0.41);
+          ? width + (endWidth * 0.59)
+          : (width * 4) + (endWidth * 0.41);
         border.style.setProperty("--border-track-initial-offset", `${initialOffset}px`);
-        return width * 3;
+        return width;
       };
       maximumOffset();
       const applyOffset = () => {
@@ -1632,6 +1632,7 @@
       if (result.correct) {
         const category = this.config.categories[result.categoryIndex];
         this.setWordMessage(this.getText("correctGroup", { category: category.title }), "success");
+        this.animateWheelReward();
       } else {
         const points = this.getText(result.deducted === 1 ? "pointSingular" : "pointPlural");
         if (result.oneAway) this.showBanner(this.getText("oneAway"), "notice");
@@ -1838,6 +1839,15 @@
       void card.offsetWidth;
       card.classList.add("score-bonus");
       root.setTimeout(() => card.classList.remove("score-bonus"), 760);
+    }
+
+    animateWheelReward() {
+      const wheel = this.nodes["wheel-trigger"];
+      if (!wheel || wheel.classList.contains("is-entering") || wheel.classList.contains("is-pressing") || wheel.classList.contains("is-cooling")) return;
+      wheel.classList.remove("is-reward-spinning");
+      void wheel.offsetWidth;
+      wheel.classList.add("is-reward-spinning");
+      root.setTimeout(() => wheel.classList.remove("is-reward-spinning"), 1250);
     }
 
     showBanner(message, tone = "notice") {
@@ -2141,7 +2151,7 @@
       ];
       for (const [border, direction] of borders) {
         if (!border) continue;
-        const limit = Math.max(border.clientHeight * (2048 / 199), 1) * 3;
+        const limit = Math.max(border.clientHeight * (2048 / 199), 1);
         const offset = locked ? limit : 0;
         border.style.setProperty("--border-drag-x", `${offset}px`);
         border.style.setProperty("--border-track-translate", `${offset * direction}px`);
