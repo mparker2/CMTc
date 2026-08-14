@@ -115,6 +115,7 @@
 
           <footer class="game-footer">
             <button id="reset-game" class="text-button muted" type="button"></button>
+            <button id="open-map" class="text-button" type="button" hidden></button>
             <span id="result-separator" class="result-separator" aria-hidden="true" hidden>.</span>
             <button id="view-result" class="text-button" type="button" hidden></button>
           </footer>
@@ -174,6 +175,16 @@
         </div>
         <button id="bonus-submit" class="button button-primary copy-button" type="button"></button>
         <p id="bonus-feedback" class="copy-status" aria-live="polite"></p>
+      </div>
+    </div>
+
+    <div id="map-dialog" class="map-dialog" role="dialog" aria-modal="true" aria-labelledby="map-title" hidden>
+      <div class="completion-panel map-panel">
+        <button id="close-map" class="dialog-close" type="button">×</button>
+        <h2 id="map-title"></h2>
+        <div id="map-image-frame" class="map-image-frame">
+          <img id="map-image" src="assets/cmt_map_rotated.png" alt="Map of the Cambridge Museum of Technology">
+        </div>
       </div>
     </div>
 

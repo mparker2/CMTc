@@ -10,7 +10,7 @@
     "selectionCount", "boardAria", "solvedGroupsAria", "unresolvedWordsAria", "solvedGroupAria",
     "tileSelectedSuffix", "wordEntryLabel", "allWordsFoundLabel", "addButton", "puzzleControlsAria",
     "submitGroupButton", "deselectAllButton", "shuffleButton", "resetButton", "completionKicker",
-    "completionTitle", "pointsLabel", "solveOrderHeading", "solveOrderAria", "guessesHeading",
+    "openMapButton", "mapTitle", "closeMapAria", "completionTitle", "pointsLabel", "solveOrderHeading", "solveOrderAria", "guessesHeading",
     "guessHistoryAria", "guessAria", "closeResultsAria", "copyResultButton", "teamNameRequired",
     "teamNameTooShort", "teamNameTooVague",
     "restoreFailed", "emptyWord", "invalidWord", "wordAlreadyFound", "duplicateWord", "gridFull", "wordCouldNotBeAdded",
@@ -287,6 +287,8 @@
       bonusRoundCompleted: false,
       bonusRoundLives: 3,
       bonusRoundSurnames: null,
+      borderEndpointsFound: { top: false, bottom: false },
+      mapUnlocked: false,
       resultSubmitted: false,
       submissionAttemptedAt: null,
     };
@@ -498,6 +500,11 @@
       bonusRoundCompleted: Boolean(rawState.bonusRoundCompleted),
       bonusRoundLives: Math.max(0, Math.min(3, Number.isFinite(Number(rawState.bonusRoundLives)) ? Number(rawState.bonusRoundLives) : 3)),
       bonusRoundSurnames: storedBonusSurnames,
+      borderEndpointsFound: {
+        top: Boolean(rawState.borderEndpointsFound?.top),
+        bottom: Boolean(rawState.borderEndpointsFound?.bottom),
+      },
+      mapUnlocked: Boolean(rawState.mapUnlocked),
       resultSubmitted: complete && Boolean(rawState.resultSubmitted),
       submissionAttemptedAt: isIsoTimestamp(rawState.submissionAttemptedAt) ? rawState.submissionAttemptedAt : null,
     };
@@ -752,7 +759,7 @@
         "fatal-error",
         "wheel-trigger", "bonus-dialog", "close-bonus", "bonus-title", "bonus-instructions",
         "bonus-lives", "bonus-hint", "bonus-grid", "bonus-submit", "bonus-feedback",
-        "top-border", "bottom-border",
+        "top-border", "bottom-border", "map-dialog", "close-map", "map-title", "map-image-frame", "map-image", "open-map",
       ];
       for (const id of ids) this.nodes[id] = document.getElementById(id);
     }
@@ -803,6 +810,9 @@
       this.nodes["deselect-all"].textContent = this.getText("deselectAllButton");
       this.nodes.shuffle.textContent = this.getText("shuffleButton");
       this.nodes["reset-game"].textContent = this.getText("resetButton");
+      this.nodes["open-map"].textContent = this.getText("openMapButton");
+      this.nodes["map-title"].textContent = this.getText("mapTitle");
+      this.nodes["close-map"].setAttribute("aria-label", this.getText("closeMapAria"));
       this.nodes["close-completion"].setAttribute("aria-label", this.getText("closeResultsAria"));
       this.nodes["completion-kicker"].textContent = this.getText("completionKicker");
       this.nodes["completion-title"].textContent = this.getText("completionTitle");
@@ -905,12 +915,14 @@
       this.nodes["deselect-all"].addEventListener("click", () => this.deselectAll());
       this.nodes.shuffle.addEventListener("click", () => this.shuffle());
       this.nodes["reset-game"].addEventListener("click", () => this.resetGame());
+      this.nodes["open-map"].addEventListener("click", () => this.openMap(false));
       this.nodes["view-result"].addEventListener("click", () => this.openCompletion());
       this.nodes["close-completion"].addEventListener("click", () => this.closeCompletion());
       this.nodes["copy-result"].addEventListener("click", () => this.copyResult());
       this.nodes["bonus-grid"].addEventListener("click", (event) => this.toggleBonusSurname(event));
       this.nodes["bonus-submit"].addEventListener("click", () => this.submitBonusRound());
       this.nodes["close-bonus"].addEventListener("click", () => this.closeBonusRound());
+      this.nodes["close-map"].addEventListener("click", () => this.closeMap());
       this.bindWheelHold();
       this.bindBorderDrag();
       root.addEventListener("online", () => this.submitCompletedResult(true));
@@ -921,6 +933,7 @@
       root.addEventListener("resize", this.fitWelcomeTitle);
       root.addEventListener("resize", this.fitTeamName);
       root.addEventListener("resize", this.fitScoreNote);
+      root.addEventListener("resize", () => this.fitMapImage());
       const fitScriptText = () => {
         this.fitWelcomeTitle();
         this.fitTeamName();
@@ -1088,6 +1101,7 @@
       const applyOffset = () => {
         border.style.setProperty("--border-drag-x", `${offset}px`);
         border.style.setProperty("--border-track-translate", `${offset * dragDirection}px`);
+        if (offset >= maximumOffset() - 1) this.markBorderEndpointFound(border.id);
       };
       const stop = () => {
         if (!dragging) return;
@@ -1145,6 +1159,23 @@
       border.addEventListener("contextmenu", (event) => event.preventDefault());
     }
 
+    markBorderEndpointFound(borderId) {
+      if (!this.engine || this.engine.state.mapUnlocked) return;
+      const endpoint = borderId === "top-border" ? "top" : borderId === "bottom-border" ? "bottom" : null;
+      if (!endpoint || this.engine.state.borderEndpointsFound?.[endpoint]) return;
+
+      this.engine.state.borderEndpointsFound = {
+        ...(this.engine.state.borderEndpointsFound || {}),
+        [endpoint]: true,
+      };
+      if (this.engine.state.borderEndpointsFound.top && this.engine.state.borderEndpointsFound.bottom) {
+        this.engine.state.mapUnlocked = true;
+      }
+      this.persist();
+      this.render();
+      if (this.engine.state.mapUnlocked) root.setTimeout(() => this.openMap(true), 120);
+    }
+
     openBonusRound() {
       if (!this.engine || this.engine.state.bonusRoundCompleted) return;
       this.bonusSelectedSurnames = new Set();
@@ -1170,6 +1201,53 @@
       if (dialog.hidden) return;
       dialog.hidden = true;
       this.unlockPageScroll();
+    }
+
+    openMap(showTitle = false) {
+      if (!this.engine?.state.mapUnlocked) return;
+      const dialog = this.nodes["map-dialog"];
+      if (!dialog || !dialog.hidden) return;
+      this.nodes["map-title"].hidden = !showTitle;
+      dialog.hidden = false;
+      this.lockPageScroll();
+      this.fitMapImage();
+      this.nodes["close-map"].focus({ preventScroll: true });
+    }
+
+    fitMapImage() {
+      const frame = this.nodes["map-image-frame"];
+      const image = this.nodes["map-image"];
+      const dialog = this.nodes["map-dialog"];
+      if (!frame || !image || !dialog || dialog.hidden) return;
+
+      const panel = this.nodes["map-dialog"].querySelector(".map-panel");
+      if (!panel) return;
+      const panelStyle = getComputedStyle(panel);
+      const panelExtras = Number.parseFloat(panelStyle.paddingLeft)
+        + Number.parseFloat(panelStyle.paddingRight) + 2;
+      const maximumPanelWidth = Math.min((root.innerWidth || document.documentElement.clientWidth) - 16, 46 * 16 * 2.875);
+      const maximumContentWidth = Math.max(160, maximumPanelWidth - panelExtras);
+      const reservedHeight = this.nodes["map-title"].hidden ? 5 * 16 : 12 * 16;
+      const availableHeight = Math.max(160, (root.innerHeight || document.documentElement.clientHeight) - reservedHeight);
+      const frameHeight = Math.min(availableHeight, maximumContentWidth / 0.727);
+      const frameWidth = frameHeight * 0.727;
+      panel.style.width = `${frameWidth + panelExtras}px`;
+      frame.style.width = `${frameWidth}px`;
+      frame.style.height = `${frameHeight}px`;
+      image.style.width = "auto";
+      image.style.height = "auto";
+      image.style.maxWidth = "100%";
+      image.style.maxHeight = "100%";
+    }
+
+    closeMap() {
+      const dialog = this.nodes["map-dialog"];
+      if (!dialog || dialog.hidden) return;
+      dialog.hidden = true;
+      this.unlockPageScroll();
+      if (this.engine && !this.nodes["open-map"].hidden) {
+        this.nodes["open-map"].focus({ preventScroll: true });
+      }
     }
 
     lockPageScroll() {
@@ -1430,6 +1508,7 @@
       this.fitTeamName();
       this.nodes["view-result"].hidden = !state.complete;
       this.nodes["result-separator"].hidden = !state.complete;
+      this.nodes["open-map"].hidden = !state.mapUnlocked;
       this.renderScore();
       this.renderResolvedGroups();
       this.renderGrid();
@@ -1666,11 +1745,13 @@
       this.bonusGoldTimer = null;
       this.closeCompletionIfOpen();
       this.closeBonusRound();
+      this.closeMap();
       this.nodes["team-name"].value = "";
       this.nodes["word-feedback"].textContent = "";
       this.nodes["submission-status"].textContent = "";
       this.nodes["feedback-banner"].classList.remove("is-visible");
       this.nodes["feedback-banner"].hidden = true;
+      this.nodes["open-map"].hidden = true;
       this.showWelcome();
     }
 

@@ -206,6 +206,7 @@ input:focus-visible {
 }
 
 .knotwork-band-top {
+  transform: translateY(0.35rem);
   cursor: default;
   pointer-events: auto;
   touch-action: none;
@@ -247,6 +248,7 @@ input:focus-visible {
   align-items: center;
   gap: 2.1rem;
   margin: 0.00rem 0 2.0rem;
+  transform: translateY(0.35rem);
 }
 
 .site-header > div:last-child {
@@ -855,6 +857,72 @@ input:disabled {
   align-items: center;
   gap: 0.rem;
   margin-top: 0.1rem;
+}
+
+.map-dialog {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  box-sizing: border-box;
+  width: 100vw;
+  max-width: 100vw;
+  max-height: none;
+  place-items: center;
+  overflow: auto;
+  padding: 0.5rem;
+  background: rgba(20, 49, 40, 0.66);
+  backdrop-filter: blur(3px);
+}
+
+.map-dialog[hidden] {
+  display: none;
+}
+
+.map-panel {
+  box-sizing: border-box;
+  width: fit-content;
+  max-width: calc(100vw - 1rem);
+  max-height: calc(100svh - 1rem);
+  overflow: auto;
+  border: 1px solid rgba(47, 102, 84, 0.32);
+  border-radius: 0.4rem;
+  background:
+    linear-gradient(rgba(252, 251, 240, 0.9), rgba(252, 251, 240, 0.9)),
+    url("assets/watercolour-background.png") center / cover;
+  box-shadow: 0 24px 80px rgba(35, 29, 33, 0.28);
+  padding: 1.4rem 1.1rem 1.2rem;
+}
+
+.map-panel h2 {
+  margin: 0.2rem 0 0.9rem;
+  color: var(--accent-deep);
+  font-family: "CMT Wedding Script", cursive;
+  font-size: clamp(2.25rem, 10vw, 3.8rem);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 0.9;
+  text-align: center;
+}
+
+.map-image {
+  display: block;
+  position: static;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.map-image-frame {
+  display: flex;
+  width: 100%;
+  height: min(calc(100svh - 12rem), 100vw);
+  align-items: center;
+  justify-content: center;
+  place-items: center;
+  overflow: hidden;
 }
 
 .result-separator {
