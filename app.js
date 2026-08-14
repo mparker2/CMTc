@@ -727,6 +727,8 @@
       this.bannerTimer = null;
       this.guessUnlockTimer = null;
       this.wordRevealTimer = null;
+      this.photoShineTimer = null;
+      this.photoShineEndTimer = null;
       this.nodes = {};
       this.syncBannerViewport = this.syncBannerViewport.bind(this);
       this.fitWelcomeTitle = this.fitWelcomeTitle.bind(this);
@@ -744,6 +746,7 @@
       this.captureNodes();
       this.applyConfiguration();
       this.bindEvents();
+      this.startIntroWhenReady();
       const restored = this.store.load(this.config);
       if (restored.state) {
         this.engine = new PuzzleEngine(this.config, restored.state);
@@ -1101,7 +1104,33 @@
       wheel.addEventListener("pointercancel", stop);
       wheel.addEventListener("lostpointercapture", stop);
       wheel.addEventListener("contextmenu", (event) => event.preventDefault());
-      root.setTimeout(() => wheel.classList.remove("is-entering"), 2000);
+    }
+
+    startIntroWhenReady() {
+      const background = "assets/watercolour-background.png";
+      const assets = [
+        "assets/knotwork-border.png",
+        "assets/knotwork-border-end.png",
+        "assets/cmt-wheel-logo-grunge.png",
+        "assets/wordmark.png",
+        "assets/cmt_map_rotated.png",
+        ...Object.values(this.config.photoClues || {}).map((filename) => (
+          String(filename).startsWith("assets/") ? String(filename) : `assets/${filename}`
+        )),
+      ];
+      const loadImage = (source) => new Promise((resolve) => {
+        const image = new Image();
+        image.onload = resolve;
+        image.onerror = resolve;
+        image.src = source;
+      });
+      const fontsReady = root.document?.fonts?.ready ?? Promise.resolve();
+      loadImage(background).then(() => Promise.all([...assets.map(loadImage), fontsReady])).then(() => {
+        root.requestAnimationFrame(() => {
+          document.body.classList.remove("page-loading");
+          root.setTimeout(() => this.nodes["wheel-trigger"]?.classList.remove("is-entering"), 2000);
+        });
+      });
     }
 
     bindBorderDrag() {
@@ -1626,6 +1655,13 @@
     render() {
       if (!this.engine) return;
       const { state } = this.engine;
+      if (state.complete) {
+        root.clearTimeout(this.photoShineTimer);
+        root.clearTimeout(this.photoShineEndTimer);
+        this.photoShineTimer = null;
+        this.photoShineEndTimer = null;
+        this.nodes["word-grid"]?.querySelector(".is-shining")?.classList.remove("is-shining");
+      }
       this.nodes["game-heading"].textContent = state.teamName;
       const headingRow = this.nodes["game-heading"].closest(".game-heading-row");
       headingRow?.classList.toggle("has-long-team-name", state.teamName.length >= 15);
@@ -1991,6 +2027,10 @@
       this.wordRevealTimer = null;
       this.nodes["welcome-screen"].hidden = false;
       this.nodes["game-screen"].hidden = true;
+      root.clearTimeout(this.photoShineTimer);
+      root.clearTimeout(this.photoShineEndTimer);
+      this.photoShineTimer = null;
+      this.photoShineEndTimer = null;
       this.restoreBorderEndpointPositions(false);
       this.nodes["top-border"]?.classList.add("is-locked");
       this.nodes["bottom-border"]?.classList.add("is-locked");
@@ -2007,6 +2047,34 @@
       this.nodes["top-border"]?.classList.toggle("is-endpoint-locked", Boolean(this.engine?.state.mapUnlocked));
       this.nodes["bottom-border"]?.classList.toggle("is-endpoint-locked", Boolean(this.engine?.state.mapUnlocked));
       this.scheduleWordReveal();
+      this.schedulePhotoShine();
+    }
+
+    schedulePhotoShine() {
+      root.clearTimeout(this.photoShineTimer);
+      this.photoShineTimer = null;
+      if (!this.engine || this.engine.state.complete) return;
+      const delay = 60000 + Math.random() * 60000;
+      this.photoShineTimer = root.setTimeout(() => this.shinePhotoCard(), delay);
+    }
+
+    shinePhotoCard() {
+      this.photoShineTimer = null;
+      if (!this.engine || this.engine.state.complete) return;
+      const cards = [...this.nodes["word-grid"].querySelectorAll(".word-tile--photo")]
+        .filter((tile) => !tile.classList.contains("is-photo-revealed"));
+      if (cards.length === 0) {
+        this.schedulePhotoShine();
+        return;
+      }
+
+      const card = cards[Math.floor(Math.random() * cards.length)];
+      card.classList.add("is-shining");
+      this.photoShineEndTimer = root.setTimeout(() => {
+        card.classList.remove("is-shining");
+        this.photoShineEndTimer = null;
+        this.schedulePhotoShine();
+      }, 850);
     }
 
     isAfterWordRevealTime(timestamp = isoTimestamp()) {

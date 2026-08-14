@@ -102,6 +102,20 @@ body {
   background: transparent;
 }
 
+.page-loading .knotwork-band {
+  opacity: 0;
+}
+
+.page-loading .brand-mark.is-entering img,
+.page-loading .site-header > div:last-child {
+  opacity: 0;
+  animation: none;
+}
+
+.knotwork-band {
+  transition: opacity 450ms ease;
+}
+
 html::before {
   position: fixed;
   z-index: -1;
@@ -202,7 +216,7 @@ input:focus-visible {
   touch-action: none;
   user-select: none;
   -webkit-touch-callout: none;
-  transition: none;
+  transition: opacity 450ms ease;
 }
 
 .knotwork-band-top {
@@ -212,7 +226,7 @@ input:focus-visible {
   touch-action: none;
   user-select: none;
   -webkit-touch-callout: none;
-  transition: none;
+  transition: opacity 450ms ease;
 }
 
 .knotwork-band-top .knotwork-track img {
@@ -786,6 +800,26 @@ input:disabled {
 .word-tile--photo {
   padding: 0;
   perspective: 44rem;
+  overflow: hidden;
+}
+
+.word-tile--photo.is-shining::after {
+  position: absolute;
+  z-index: 3;
+  top: -45%;
+  left: -75%;
+  width: 42%;
+  height: 190%;
+  content: "";
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.72), transparent);
+  pointer-events: none;
+  transform: rotate(18deg);
+  animation: photo-card-shine 850ms ease-out both;
+}
+
+@keyframes photo-card-shine {
+  from { left: -75%; }
+  to { left: 145%; }
 }
 
 .word-tile-inner {
