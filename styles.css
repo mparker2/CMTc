@@ -765,7 +765,7 @@ input:disabled {
 }
 
 .score-card.score-over-limit .score-track::-moz-progress-bar {
-  background: #c9932f;
+  background: linear-gradient(90deg, #a66b17, #e0b34f);
 }
 
 .score-note {
