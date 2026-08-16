@@ -999,6 +999,9 @@
       if (!wheel) return;
       const wheelImage = wheel.querySelector("img");
       if (!wheelImage) return;
+      const acceleration = 2050 / 4;
+      const unlockSpeed = 2250;
+      const maximumSpeed = 3200;
       let holdStartedAt = 0;
       let holdTimer = null;
       let spinFrame = null;
@@ -1020,7 +1023,8 @@
         const nextWholeRotation = Math.ceil((startRotation + 0.0001) / 360) * 360;
         let targetRotation = nextWholeRotation > startRotation ? nextWholeRotation : startRotation + 360;
         const initialSpeed = spinSpeed;
-        const decelerationDuration = 0.5;
+        if (initialSpeed <= 0) return;
+        const decelerationDuration = 0.45 + (0.9 * Math.min(initialSpeed / unlockSpeed, 1.5));
         const minimumDistance = initialSpeed * decelerationDuration / 2;
         while (targetRotation - startRotation < minimumDistance) {
           targetRotation += 360;
@@ -1035,11 +1039,13 @@
           const elapsedSeconds = Math.min(cooldownDuration, (now - cooldownStartedAt) / 1000);
           if (elapsedSeconds <= coastDuration) {
             rotation = startRotation + (initialSpeed * elapsedSeconds);
+            spinSpeed = initialSpeed;
           } else {
             const progress = (elapsedSeconds - coastDuration) / decelerationDuration;
             // Coast first, then decelerate linearly to zero exactly at the
             // target orientation. The velocity never increases or reverses.
             rotation = startRotation + coastDistance + decelerationDistance * (2 * progress - (progress ** 2));
+            spinSpeed = initialSpeed * Math.max(0, 1 - progress);
           }
           wheelImage.style.transform = `rotate(${rotation}deg)`;
           if (elapsedSeconds < cooldownDuration) cooldownFrame = root.requestAnimationFrame(cooldown);
@@ -1056,13 +1062,10 @@
         cooldownFrame = root.requestAnimationFrame(cooldown);
       };
       const update = () => {
-        const elapsed = Date.now() - holdStartedAt;
-        const progress = Math.min(elapsed, 4000) / 4000;
-        const easedProgress = progress * progress;
-        const speed = 1.8 - (1.64 * easedProgress);
-        spinSpeed = 200 + (2050 * easedProgress);
-        wheel.style.setProperty("--wheel-spin-duration", `${speed}s`);
-        if (elapsed >= 4000 && this.engine && !this.engine.state.bonusRoundCompleted) {
+        const elapsedSeconds = (performance.now() - holdStartedAt) / 1000;
+        spinSpeed = Math.min(maximumSpeed, Math.max(200, spinSpeed + (acceleration * elapsedSeconds)));
+        holdStartedAt = performance.now();
+        if (spinSpeed >= unlockSpeed && this.engine && !this.engine.state.bonusRoundCompleted) {
           this.engine.state.bonusRoundUnlocked = true;
           this.persist();
           stop();
@@ -1074,13 +1077,8 @@
       };
       const animateSpin = (now) => {
         if (!holdStartedAt) return;
-        const elapsed = Date.now() - holdStartedAt;
-        const progress = Math.min(elapsed, 4000) / 4000;
-        const easedProgress = progress * progress;
-        const degreesPerSecond = 200 + (2050 * easedProgress);
         const frameDelta = Math.min(50, now - lastFrameAt);
-        spinSpeed = degreesPerSecond;
-        rotation += degreesPerSecond * frameDelta / 1000;
+        rotation += spinSpeed * frameDelta / 1000;
         wheelImage.style.transform = `rotate(${rotation}deg)`;
         lastFrameAt = now;
         spinFrame = root.requestAnimationFrame(animateSpin);
@@ -1092,13 +1090,11 @@
         root.cancelAnimationFrame?.(cooldownFrame);
         cooldownFrame = null;
         wheel.classList.remove("is-cooling");
-        wheelImage.style.removeProperty("transform");
-        rotation = 0;
         wheel.setPointerCapture?.(event.pointerId);
-        holdStartedAt = Date.now();
+        holdStartedAt = performance.now();
+        spinSpeed = Math.max(200, spinSpeed);
         lastFrameAt = performance.now();
         wheel.classList.add("is-pressing");
-        update();
         spinFrame = root.requestAnimationFrame(animateSpin);
         holdTimer = root.setInterval(update, 80);
       };
