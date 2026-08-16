@@ -289,6 +289,7 @@
       bonusRoundLives: 3,
       bonusRoundSurnames: null,
       wordRevealOffered: false,
+      borderHintPlayed: false,
       borderEndpointsFound: { top: false, bottom: false },
       mapUnlocked: false,
       resultSubmitted: false,
@@ -503,6 +504,7 @@
       bonusRoundLives: Math.max(0, Math.min(3, Number.isFinite(Number(rawState.bonusRoundLives)) ? Number(rawState.bonusRoundLives) : 3)),
       bonusRoundSurnames: storedBonusSurnames,
       wordRevealOffered: Boolean(rawState.wordRevealOffered),
+      borderHintPlayed: Boolean(rawState.borderHintPlayed),
       borderEndpointsFound: {
         top: Boolean(rawState.borderEndpointsFound?.top),
         bottom: Boolean(rawState.borderEndpointsFound?.bottom),
@@ -729,6 +731,7 @@
       this.wordRevealTimer = null;
       this.photoShineTimer = null;
       this.photoShineEndTimer = null;
+      this.screenTransitionTimer = null;
       this.nodes = {};
       this.syncBannerViewport = this.syncBannerViewport.bind(this);
       this.fitWelcomeTitle = this.fitWelcomeTitle.bind(this);
@@ -1201,6 +1204,7 @@
         event.preventDefault();
         root.cancelAnimationFrame?.(inertiaFrame);
         inertiaFrame = null;
+        border.classList.remove("is-hinting");
         border.classList.remove("is-coasting");
         dragging = true;
         lastX = event.clientX;
@@ -1465,8 +1469,9 @@
       }
       this.selectedWords = [];
       this.persist();
-      this.showGame();
+      this.showGame(true);
       this.render();
+      this.animateBorderHint();
       const personalizedWelcome = personalizedWelcomeFor(teamName);
       const welcomeMessage = personalizedWelcome?.message ?? this.getText("personalizedWelcomeDefault");
       this.showBanner(formatText(welcomeMessage, { teamname: teamName }), "notice");
@@ -2033,6 +2038,13 @@
     }
 
     showWelcome() {
+      root.clearTimeout(this.screenTransitionTimer);
+      this.screenTransitionTimer = null;
+      const main = this.nodes["welcome-screen"]?.parentElement;
+      main?.classList.remove("is-screen-transitioning");
+      if (main) main.style.height = "";
+      this.nodes["welcome-screen"]?.classList.remove("screen-transition-leaving", "screen-transition-hidden");
+      this.nodes["game-screen"]?.classList.remove("screen-transition-entering", "screen-transition-visible");
       root.clearTimeout(this.wordRevealTimer);
       this.wordRevealTimer = null;
       this.nodes["welcome-screen"].hidden = false;
@@ -2041,16 +2053,47 @@
       root.clearTimeout(this.photoShineEndTimer);
       this.photoShineTimer = null;
       this.photoShineEndTimer = null;
-      this.restoreBorderEndpointPositions(false);
+      this.restoreBorderEndpointPositions(false, true);
       this.nodes["top-border"]?.classList.add("is-locked");
       this.nodes["bottom-border"]?.classList.add("is-locked");
       this.nodes["top-border"]?.classList.remove("is-endpoint-locked");
       this.nodes["bottom-border"]?.classList.remove("is-endpoint-locked");
     }
 
-    showGame() {
-      this.nodes["welcome-screen"].hidden = true;
-      this.nodes["game-screen"].hidden = false;
+    showGame(animate = false) {
+      const welcome = this.nodes["welcome-screen"];
+      const game = this.nodes["game-screen"];
+      const main = welcome?.parentElement;
+      root.clearTimeout(this.screenTransitionTimer);
+      this.screenTransitionTimer = null;
+
+      if (animate && welcome && game && main && !welcome.hidden) {
+        const welcomeHeight = welcome.getBoundingClientRect().height;
+        welcome.hidden = false;
+        game.hidden = false;
+        main.classList.add("is-screen-transitioning");
+        main.style.height = `${welcomeHeight}px`;
+        welcome.classList.add("screen-transition-leaving");
+        game.classList.add("screen-transition-entering");
+        root.requestAnimationFrame(() => {
+          const gameHeight = game.scrollHeight;
+          welcome.classList.add("screen-transition-hidden");
+          game.classList.add("screen-transition-visible");
+          main.style.height = `${gameHeight}px`;
+        });
+        this.screenTransitionTimer = root.setTimeout(() => {
+          welcome.hidden = true;
+          game.hidden = false;
+          welcome.classList.remove("screen-transition-leaving", "screen-transition-hidden");
+          game.classList.remove("screen-transition-entering", "screen-transition-visible");
+          main.classList.remove("is-screen-transitioning");
+          main.style.height = "";
+          this.screenTransitionTimer = null;
+        }, 600);
+      } else {
+        welcome.hidden = true;
+        game.hidden = false;
+      }
       this.restoreBorderEndpointPositions(Boolean(this.engine?.state.mapUnlocked));
       this.nodes["top-border"]?.classList.remove("is-locked");
       this.nodes["bottom-border"]?.classList.remove("is-locked");
@@ -2144,7 +2187,7 @@
       this.closeWordReveal();
     }
 
-    restoreBorderEndpointPositions(locked) {
+    restoreBorderEndpointPositions(locked, hintStart = false) {
       const borders = [
         [this.nodes["top-border"], 1],
         [this.nodes["bottom-border"], -1],
@@ -2152,10 +2195,41 @@
       for (const [border, direction] of borders) {
         if (!border) continue;
         const limit = Math.max(border.clientHeight * (2048 / 199), 1);
-        const offset = locked ? limit : 0;
+        const offset = locked ? limit : hintStart ? limit * 0.5 : 0;
         border.style.setProperty("--border-drag-x", `${offset}px`);
         border.style.setProperty("--border-track-translate", `${offset * direction}px`);
       }
+    }
+
+    animateBorderHint() {
+      if (!this.engine || this.engine.state.borderHintPlayed || this.engine.state.mapUnlocked) return;
+
+      const borders = [
+        [this.nodes["top-border"], 1],
+        [this.nodes["bottom-border"], -1],
+      ];
+      this.engine.state.borderHintPlayed = true;
+      this.persist();
+      for (const [border, direction] of borders) {
+        if (!border) continue;
+        const limit = Math.max(border.clientHeight * (2048 / 199), 1);
+        const hintOffset = limit * 0.5;
+        border.style.setProperty("--border-drag-x", `${hintOffset}px`);
+        border.style.setProperty("--border-track-translate", `${hintOffset * direction}px`);
+      }
+      for (const [border] of borders) border?.classList.add("is-hinting");
+
+      root.requestAnimationFrame(() => {
+        for (const [border] of borders) {
+          if (!border) continue;
+          border.style.setProperty("--border-drag-x", "0px");
+          border.style.setProperty("--border-track-translate", "0px");
+        }
+      });
+
+      root.setTimeout(() => {
+        for (const [border] of borders) border?.classList.remove("is-hinting");
+      }, 1250);
     }
 
     setTeamMessage(message, tone = "") {
