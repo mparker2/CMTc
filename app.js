@@ -1170,6 +1170,7 @@
         border.style.setProperty("--border-drag-x", `${offset}px`);
         border.style.setProperty("--border-track-translate", `${offset * dragDirection}px`);
         if (offset >= maximumOffset() - 1) this.markBorderEndpointFound(border.id);
+        else this.clearBorderEndpointFound(border.id);
       };
       const stop = () => {
         if (!dragging) return;
@@ -1249,6 +1250,18 @@
       this.persist();
       this.render();
       if (this.engine.state.mapUnlocked) root.setTimeout(() => this.openMap(true), 120);
+    }
+
+    clearBorderEndpointFound(borderId) {
+      if (!this.engine || this.engine.state.mapUnlocked) return;
+      const endpoint = borderId === "top-border" ? "top" : borderId === "bottom-border" ? "bottom" : null;
+      if (!endpoint || !this.engine.state.borderEndpointsFound?.[endpoint]) return;
+
+      this.engine.state.borderEndpointsFound = {
+        ...(this.engine.state.borderEndpointsFound || {}),
+        [endpoint]: false,
+      };
+      this.persist();
     }
 
     openBonusRound() {
@@ -2093,6 +2106,10 @@
       } else {
         welcome.hidden = true;
         game.hidden = false;
+      }
+      if (!this.engine?.state.mapUnlocked && (this.engine?.state.borderEndpointsFound?.top || this.engine?.state.borderEndpointsFound?.bottom)) {
+        this.engine.state.borderEndpointsFound = { top: false, bottom: false };
+        this.persist();
       }
       this.restoreBorderEndpointPositions(Boolean(this.engine?.state.mapUnlocked));
       this.nodes["top-border"]?.classList.remove("is-locked");
